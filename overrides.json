@@ -1,6 +1,6 @@
 {
-  "_comment": "Manual fixes where the teaching schedule (actual semester taught) beats the yedion programStudy tree (administrative grouping). Keys are course ids (XXXX-XXXX).",
+  "_comment": "Manual fixes where the teaching schedule (actual semester taught) beats the yedion programStudy tree (administrative grouping). Value is either a semester string (applies to all programs) or {sem, programs[]} to scope it.",
   "sem": {
-    "0366-3098": "א"
+    "0366-3098": {"sem": "א", "programs": ["dual"]}
   }
 }

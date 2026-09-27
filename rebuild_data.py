@@ -47,6 +47,8 @@ filemap = {"dual_2025": "prog_7612_2025.json", "dual_2026": "prog_7612_2026.json
 prereq = json.load(open('prereqs.json', encoding='utf-8'))
 
 courses = {}
+expected = {}  # (show, prog, year) -> raw-derived occ, for the audit below
+multi = {}  # (show, prog, year) -> set of distinct derived tuples (cross-listings)
 for key, fn in filemap.items():
     prog = key.rsplit('_', 1)[0]; year = key.rsplit('_', 1)[1]
     d = json.load(open(fn, encoding='utf-8'))
@@ -66,10 +68,12 @@ for key, fn in filemap.items():
                 c['programs'].setdefault(prog, {})
                 t = ctype(name)
                 y, sem = year_info(top or name, name)
-                c['occ'].setdefault(f'{prog}_{year}', {"type": t, "year": y, "sem": sem,
-                                                       "rama": (top + ' / ' + name if top else name)})
+                c['occ'][f'{prog}_{year}'] = {"type": t, "year": y, "sem": sem,
+                                                   "rama": (top + ' / ' + name if top else name)}
                 c['programs'][prog][year] = {"type": t, "year": y, "sem": sem,
                                              "rama": (top + ' / ' + name if top else name)}
+                expected[(show, prog, year)] = dict(c['programs'][prog][year])
+                multi.setdefault((show, prog, year), set()).add((t, y, sem))
             if r.get('rama'):
                 walk(r['rama'], top or name, name)
     walk(d['rama'])
@@ -93,16 +97,35 @@ for show, c in courses.items():
     c['year'] = min(ys) if ys else 4
 
 # --- manual semester overrides (teaching schedule beats yedion structure) ---
+# Value form: "SEM" (all programs) or {"sem": "SEM", "programs": [...]} (scoped).
+covered = set()
 try:
     ovr = json.load(open('overrides.json', encoding='utf-8'))
-    for show, sem in (ovr.get('sem') or {}).items():
+    for show, rule in (ovr.get('sem') or {}).items():
+        if isinstance(rule, dict):
+            sem, progs = rule.get('sem', ''), rule.get('programs')
+        else:
+            sem, progs = rule, None
+        if sem not in ('א', 'ב', ''):
+            print('override: bad semester value for', show, repr(sem))
+            continue
         c = courses.get(show)
         if not c:
             print('override: unknown course', show)
             continue
-        for o in list(c['occ'].values()) + [v for ys in c['programs'].values() for v in ys.values()]:
-            o['sem'] = sem
-    print('overrides applied:', ovr.get('sem'))
+        targets = [p for p in (progs if progs is not None else list(c['programs']))]
+        for p in targets:
+            if p not in c['programs']:
+                print('override: %s not present in program %s' % (show, p))
+                continue
+            for y in c['programs'][p]:
+                c['programs'][p][y]['sem'] = sem
+                covered.add((show, p, y))
+        for key in list(c['occ']):
+            p2 = key.rsplit('_', 1)[0]
+            if progs is None or p2 in (progs or []):
+                c['occ'][key]['sem'] = sem
+    print('overrides applied, covered occurrences:', len(covered))
 except FileNotFoundError:
     pass
 
@@ -171,6 +194,41 @@ for kursid, v in prereq.items():
         for k, nm in dd.items(): ext.setdefault(k, nm)
 for c in courses.values():
     c.setdefault('reqPre', []); c.setdefault('reqCo', [])
+
+# --- audit: final placements must equal raw-derived ones, except override-covered semesters ---
+bad = 0
+checked = 0
+for c in courses.values():
+    for p, ys in c['programs'].items():
+        for y, o in ys.items():
+            e = expected.get((c['id'], p, y))
+            checked += 1
+            if e is None:
+                print('AUDIT missing expected occ for', c['id'], p, y)
+                bad += 1
+                continue
+            for f in ('type', 'year', 'sem', 'rama'):
+                if o[f] != e[f]:
+                    if f == 'sem' and (c['id'], p, y) in covered:
+                        continue
+                    print('AUDIT DIFF %s %s %s field=%s data=%r raw=%r'
+                          % (c['id'], p, y, f, o[f], e[f]))
+                    bad += 1
+    for key, o in c['occ'].items():
+        p2 = key.rsplit('_', 1)[0]
+        pv = (c['programs'].get(p2) or {})
+        y2 = key.rsplit('_', 1)[1]
+        if y2 in pv and o != pv[y2]:
+            print('AUDIT occ/programs mismatch for', c['id'], key)
+            bad += 1
+print('audit: checked %d occurrences, %d divergence(s)%s'
+      % (checked, bad, ' -- FAIL' if bad else ' -- OK'))
+print('cross-listed courses (same program-year, multiple rama contexts):')
+for (show, p, y), vals in sorted(multi.items()):
+    if len(vals) > 1:
+        print('  WARN %s %s %s contexts=%s' % (show, p, y, sorted(vals)))
+if bad:
+    sys.exit(1)
 
 data = {"programs": list(programs.values()), "courses": list(courses.values()), "edges": edges,
         "extNames": ext, "meta": {"years": ["2025", "2026"],
