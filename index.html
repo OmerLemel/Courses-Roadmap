@@ -44,10 +44,12 @@ label.prog{display:flex;gap:6px;align-items:center;font-size:13px;background:#ff
 .band{position:absolute;right:0;left:0;border-top:3px solid #9ca3af;background:rgba(255,255,255,.55)}
 .band h2{position:sticky;right:8px;margin:4px 8px;font-size:15px;color:#111827;background:#fff;display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid #ddd}
 .subband{position:absolute;color:#4b5563;font-size:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1px 8px;z-index:2}
-.node{position:absolute;width:178px;min-height:50px;border-radius:10px;color:#fff;padding:6px 8px;font-size:12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);border:2px solid transparent;line-height:1.25;display:flex;flex-direction:column}
-.node .cid{font-weight:bold;font-size:12px;direction:rtl;text-align:center;background:rgba(255,255,255,.25);border-radius:6px;padding:1px 6px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.node{position:absolute;width:178px;min-height:50px;border-radius:10px;color:#fff;padding:4px 6px;font-size:12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);border:2px solid transparent;line-height:1.25;display:flex;flex-direction:column}
+body.roomy .node{padding:6px 8px}
+.node .cid{font-weight:bold;font-size:12px;direction:rtl;text-align:center;background:rgba(255,255,255,.25);border-radius:6px;padding:0 6px;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+body.roomy .node .cid{padding:1px 6px;margin-bottom:3px}
 .node .nm{text-align:center;flex:1;display:flex;align-items:center;justify-content:center;min-height:30px}
-.node .nm .clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.node .nm .clamp{display:block;width:100%;line-clamp:2;-webkit-line-clamp:2;max-height:2.6em;overflow:hidden}
 .node .meta{text-align:center;font-size:10px;opacity:.9;margin-top:2px}
 body.roomy .node{min-height:74px}
 body.roomy .node .cid{display:block;text-align:center}
@@ -77,6 +79,9 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
 .catbtn svg{width:65%;height:65%}
 body.dark .catbtn{background:#e5e7eb;color:#111827;border-color:#e5e7eb}
 .catcard{background:#fff;border-radius:14px;padding:16px;max-width:92vw;text-align:center;color:#111827}
+.spinner{width:36px;height:36px;border:4px solid #e5e7eb;border-top-color:#6b7280;border-radius:50%;margin:20px auto;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+body.dark .spinner{border-color:#374151;border-top-color:#9ca3af}
 .iconbtn{width:30px;height:30px;border-radius:8px;border:1px solid #999;background:#fff;color:#111827;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
 body.dark .iconbtn{background:#374151;color:#fff;border-color:#6b7280}
 body.dark .catcard{background:#1f2937;color:#e5e7eb}
@@ -144,6 +149,7 @@ body.dark #zoomlvl{color:#e5e7eb}
   <div class="catcard">
     <div style="display:flex;align-items:center;margin-bottom:8px"><div style="font-weight:bold;flex:1;text-align:center">הפסקת חתול!</div><button class="iconbtn" id="catMute" title="השתק"></button></div>
     <img id="catImg" style="display:none;max-width:70vw;max-height:60vh;border-radius:10px" alt="חתול אקראי">
+    <div id="catSpin" class="spinner" style="display:none"></div>
     <div id="catErr" style="display:none;color:#b91c1c">אין חתול זמין (בדקו חיבור לאינטרנט)</div>
     <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
       <button class="progbtn" id="catMore">חתול נוסף</button>
@@ -203,8 +209,11 @@ function centerOn(id){ // glide the node into view, but only if it's off-screen
   document.getElementById('stage').style.transition='transform .25s ease-out';
   panX=Ww/2-L0x-p.cx*zoom;panY=Wh/2-cy*zoom;applyView();}
 const BANDS=[{y:1,t:'שנה א׳'},{y:2,t:'שנה ב׳'},{y:3,t:'שנה ג׳ (כולל שנים ב׳+ג׳)'},{y:4,t:'שאר רוח / אחר'}];
-const NW=178,GX=28,GY=28,PAD=60,TOPH=46,SUBH=28,BANDPAD=24;
-let NH=66; // node height unit: 66 compact, 86 roomy (set per render from nodeMode)
+// per-mode layout config: compact squeezes chrome, roomy spends space visibly
+const DCFG={
+  compact:{NW:178,NH:56,GY:22,GX:26,PAD:60,TOPH:38,SUBH:26,BANDPAD:16,SEC:10,MAXL:10,nameFs:12},
+  roomy:{NW:196,NH:86,GY:38,GX:30,PAD:60,TOPH:46,SUBH:28,BANDPAD:24,SEC:12,MAXL:8,nameFs:13}};
+const fitCache={};
 let nodeMode='compact';
 try{nodeMode=localStorage.getItem('tauNodeMode')||'roomy';}catch(_){}
 let darkMode=false;
@@ -266,6 +275,8 @@ function buildControls(){
     try{localStorage.setItem('tauMute',catMuted?'1':'0');}catch(_){}syncMute();};
   document.getElementById('catClose').onclick=()=>{document.getElementById('catModal').style.display='none';};
   document.getElementById('catModal').addEventListener('click',e=>{if(e.target.id==='catModal')e.target.style.display='none';});
+  try{catAudio=new Audio('meow.ogg');catAudio.preload='auto';catAudio.load();}catch(_){}
+  prefetchCat();
   syncCatSize();
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>syncCatSize());
   document.getElementById('legPre').onclick=()=>{showPreE=!showPreE;syncLeg();saveFilters();render();};
@@ -342,11 +353,14 @@ function meow(){try{
   osc.connect(g);g.connect(ctx.destination);
   osc.start(t);lfo.start(t);osc.stop(t+0.55);lfo.stop(t+0.55);
 }catch(_){}}
-function loadCat(){const img=document.getElementById('catImg'),err=document.getElementById('catErr');
-  err.style.display='none';img.style.display='none';
-  img.onload=()=>{img.style.display='';};
-  img.onerror=()=>{err.style.display='';};
-  img.src='https://cataas.com/cat?'+Date.now();}
+let nextCat=null;
+function prefetchCat(){try{const u='https://cataas.com/cat?'+Date.now();const im=new Image();im.src=u;nextCat={u};}catch(_){}}
+function loadCat(){const img=document.getElementById('catImg'),err=document.getElementById('catErr'),sp=document.getElementById('catSpin');
+  err.style.display='none';img.style.display='none';sp.style.display='';
+  img.onload=()=>{sp.style.display='none';img.style.display='';};
+  img.onerror=()=>{sp.style.display='none';err.style.display='';};
+  const useNext=nextCat;nextCat=null;prefetchCat(); // show prefetched instantly, warm up the following one
+  img.src=useNext?useNext.u:'https://cataas.com/cat?'+Date.now();}
 function openCat(){document.getElementById('catModal').style.display='flex';syncMute();playMeow();loadCat();}
 let catMuted=false;
 try{catMuted=localStorage.getItem('tauMute')==='1';}catch(_){}
@@ -364,9 +378,22 @@ function syncMute(){const b=document.getElementById('catMute');if(!b)return;
   const off='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
   b.innerHTML=catMuted?off:on;b.title=catMuted?'בטל השתק':'השתק';}
 
+function fitClamps(){ // shrink overflowing names to fit the 2-line box (cached per course+mode)
+  const key=nodeMode+':';
+  document.querySelectorAll('#nodes .node').forEach(nd=>{
+    const sp=nd.querySelector('.clamp');if(!sp||!nd.dataset.cid)return;
+    const ck=key+nd.dataset.cid,hit=fitCache[ck];
+    if(hit!==undefined){if(hit)sp.style.fontSize=hit;return;}
+    sp.style.fontSize='';
+    const base=parseFloat(getComputedStyle(sp).fontSize)||12;
+    let fs=base,guard=0;
+    while(sp.scrollHeight>sp.clientHeight+1&&fs>8&&guard<12){fs-=0.5;sp.style.fontSize=fs+'px';guard++;}
+    fitCache[ck]=fs<base?fs+'px':'';
+  });
+}
 function render(){
   if(!DATA)return;
-  NH=nodeMode==='roomy'?86:66;
+  const{NW,NH,GY,GX,PAD,TOPH,SUBH,BANDPAD,SEC,MAXL,nameFs}=DCFG[nodeMode]||DCFG.compact;
   document.body.classList.toggle('roomy',nodeMode==='roomy');
   let courses=DATA.courses.filter(c=>occOf(c));
   courses=courses.filter(c=>!offTypes.has(mainType(c))&&matchQ(c));
@@ -393,7 +420,6 @@ function render(){
   // prerequisite's lane when free (straight vertical arrows) and is always
   // placed strictly below its same-section prerequisites.
   const laneOf={};let nLanes=0;
-  const MAXL=8; // lane cap: forces a balanced (not too wide, not too tall) map
   const freeLane=used=>{let l=0;while(l<nLanes&&used.has(l))l++;return l<nLanes?l:null;};
   const parentLanes=c=>{const pre=[],co=[],seen=new Set();
     for(const e of layoutEdges){if(e.to!==c.id)continue;const l=laneOf[e.from];
@@ -498,7 +524,7 @@ function render(){
         lb.style.top=(yOff+3)+'px';lb.style.right=PAD+'px';lb.textContent=semName[s.sem];
         nodesEl.appendChild(lb);yOff+=SUBH;}
       s.top=yOff;
-      yOff+=s.rows.length*(NH+GY)+10;
+      yOff+=s.rows.length*(NH+GY)+SEC;
     });
     yOff+=BANDPAD;
     div.style.top=top+'px';div.style.height=(yOff-top)+'px';div.style.width=W+'px';
@@ -516,7 +542,9 @@ function render(){
       if(query&&!matchQ(c))cls+=' dim';
       else if(selected&&selected!==id&&!hlPre.has(id)&&!hlCo.has(id))cls+=' dim';
       const el=document.createElement('div');el.className=cls;
+      el.dataset.cid=c.id;
       el.style.right=right+'px';el.style.top=yy+'px';el.style.background=COLORS[t];
+      el.style.width=NW+'px';el.style.fontSize=nameFs+'px';
       el.innerHTML=nodeMode==='roomy'
         ?`<div class="cid"><span dir="ltr">${c.id}</span></div><div class="nm"><span class="clamp">${c.name||t}</span></div><div class="meta" dir="rtl">${c.credits?c.credits+' ש״ס':''}</div>`
         :`<div class="cid"><span dir="ltr">${c.id}</span><span dir="rtl">${c.credits?c.credits+' ש״ס':''}</span></div><div class="nm"><span class="clamp">${c.name||t}</span></div>`;
@@ -525,6 +553,7 @@ function render(){
     });});});
   const stage=document.getElementById('stage');stage.style.width=W+'px';stage.style.height=yOff+'px';
   lastPos=pos;
+  fitClamps();
   lastW=W;lastH=yOff;applyView(); // store canvas size + enforce pan limits
   const svg=document.getElementById('edges');svg.setAttribute('width',W);svg.setAttribute('height',yOff);
   const markers=`<defs>

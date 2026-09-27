@@ -56,8 +56,13 @@ for key, fn in filemap.items():
             for k in r.get('kurs', []) or []:
                 show = k.get('kursshow', '').strip()
                 if not show: continue
-                c = courses.setdefault(show, {"id": show, "kursid": k['kursid'], "name": k.get('teurkurs', ''),
-                                              "credits": k.get('shaotuni', ''), "programs": {}, "occ": {}})
+                if show in courses:  # prefer non-empty name/credits across occurrences
+                    c = courses[show]
+                    if not c['name'] and k.get('teurkurs'): c['name'] = k['teurkurs']
+                    if not c['credits'] and k.get('shaotuni'): c['credits'] = k['shaotuni']
+                else:
+                    c = courses[show] = {"id": show, "kursid": k['kursid'], "name": k.get('teurkurs', ''),
+                                         "credits": k.get('shaotuni', ''), "programs": {}, "occ": {}}
                 c['programs'].setdefault(prog, {})
                 t = ctype(name)
                 y, sem = year_info(top or name, name)
