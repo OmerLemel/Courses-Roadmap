@@ -132,7 +132,7 @@ body.dark #zoomlvl{color:#e5e7eb}
 <span class="copyright">© 2026 עומר למל. כל הזכויות שמורות.</span>
 </header>
 <div id="controls">
-  <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap"><span id="yearBtns"></span></div></div><div class="chips" id="progs" style="margin-top:6px"></div>
+  <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px"><span id="yearBtns"></span><button class="iconbtn" id="openYedion" title="פתח ידיעון" style="width:22px;height:22px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></button></div></div><div class="chips" id="progs" style="margin-top:6px"></div>
   </div>
   <div class="grp"><h3>סוג קורס - לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
   <div class="grp"><h3>חיפוש (שם או מספר, למשל 2160 / 0368-2160)</h3>
@@ -242,6 +242,7 @@ function buildControls(){
     return(ia<0?99:ia)-(ib<0?99:ib);}).forEach(p=>{const b=document.createElement('button');b.className='progbtn';b.dataset.p=p.id;b.textContent=p.name;
     b.onclick=()=>selectProg(p.id);pc.appendChild(b);});
   syncP();
+  document.getElementById('openYedion').onclick=()=>{const u=yedionURL();if(u)window.open(u,'_blank');};
   const yearsOf=p=>[...new Set(DATA.courses.flatMap(c=>Object.keys(c.programs[p]||{})))].sort(); // ascending: latest ends up leftmost
   const syncYears=()=>{const ys=yearsOf(selProg);if(!ys.includes(year))year=ys[ys.length-1];
     const yc=document.getElementById('yearBtns');yc.innerHTML='';
@@ -335,6 +336,9 @@ function buildControls(){
   document.getElementById('zout').onclick=()=>zoomCenter(1/1.25);
   document.getElementById('zreset').onclick=()=>{document.getElementById('stage').style.transition='transform .15s ease-out';zoom=1;panX=0;panY=0;applyView();};
 }
+function yedionURL(){const p=(DATA.programs||[]).find(p=>p.id===selProg);return p?(p['url'+year]||null):null;}
+function syncYedion(){const b=document.getElementById('openYedion');if(!b)return;
+  const u=yedionURL();b.style.display=u?'':'none';b.title=u?('פתח ידיעון '+year):'';}
 function matchQ(c){if(!query)return true;const q=query.replace('-','');return c.name.includes(query)||c.id.replace('-','').includes(q);}
 function meow(){try{
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
@@ -415,6 +419,7 @@ function render(){
   hlPre=new Set();hlCo=new Set();
   if(selected){layoutEdges.filter(e=>e.to===selected).forEach(e=>{(e.kind==='co'?hlCo:hlPre).add(e.from);});}
   document.getElementById('stats').innerHTML=`<div class="statrow"><div class="statbox"><b>${courses.length}</b><span>קורסים</span></div><div class="statbox"><b>${edges.length}</b><span>חצים</span></div></div>`;
+  syncYedion();
   const wrapW=document.getElementById('canvasWrap').clientWidth-40;
   // depth over pre-edges (longest path from sources)
   const depth={};courses.forEach(c=>depth[c.id]=0);
@@ -618,17 +623,11 @@ function showDetail(c){
   const ramaShort=o?o.rama.replace(/\s*-\s*(קורסי\s)?(חובה|בחירה|ליבה|סמינר|סדנה).*$/,'').trim(): '';
   const occ=o?`<div>${ramaShort}${(!/סמסטר/.test(ramaShort)&&o.sem)?' · סמסטר '+o.sem:''}</div>`:'';
   const next=DATA.edges.filter(e=>e.from===c.id);
-  const links=(DATA.programs||[]).filter(p=>c.programs[p.id]).map(p=>{
-    const nm=p.id==='dual'?'ידיעון דו-חוגי':('ידיעון '+p.name);
-    return Object.keys(c.programs[p.id]).sort().map(y=>{
-      const url=p['url'+y];
-      return url?`<div class="kv"><a target="_blank" href="${url}">${nm} ${y}</a></div>`:'';}).join('');}).join('');
   document.getElementById('detail').innerHTML=`<h2>${c.name||mainType(c)}</h2>
     <div class="kv"><b style="direction:ltr">${c.id}</b> · ${c.credits} ש״ס · <span class="badge" style="background:${COLORS[mainType(c)]}">${mainType(c)}</span></div>${occ}
     <div class="kv"><div class="reqkey">דרישות קדם:</div>${renderLogic(c.reqPre)}</div>
     <div class="kv"><div class="reqkey">דרישות מקבילות:</div>${renderLogic(c.reqCo)}</div>
-    <div class="kv"><b>קורסים שאפשר לקחת אחריו:</b><br>${next.length?next.map(e=>`${courseLink(e.to)} (${e.kind==='co'?'מקביל':'קדם'})`).join(' · '):'—'}</div>
-    <div class="kv"><small class="hint">הערה: לימוד הקורס בעבר וזכאות לגשת לבחינה מאפשרים רישום לקורס.</small></div>${links}`;
+    <div class="kv"><b>קורסים שאפשר לקחת אחריו:</b><br>${next.length?next.map(e=>`${courseLink(e.to)} (${e.kind==='co'?'מקביל':'קדם'})`).join(' · '):'—'}</div>`;
   document.querySelectorAll('#detail a[data-go]').forEach(a=>a.onclick=ev=>{ev.preventDefault();const t=DATA.courses.find(x=>x.id===a.dataset.go);if(t){selected=t.id;showDetail(t);render();centerOn(t.id);}});
 }
 function syncCatSize(){try{
