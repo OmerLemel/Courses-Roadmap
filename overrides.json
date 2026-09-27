@@ -1,0 +1,6 @@
+{
+  "_comment": "Manual fixes where the teaching schedule (actual semester taught) beats the yedion programStudy tree (administrative grouping). Keys are course ids (XXXX-XXXX).",
+  "sem": {
+    "0366-3098": "א"
+  }
+}

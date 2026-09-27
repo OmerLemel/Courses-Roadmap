@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפת קורסים - מתמטיקה ומדעי המחשב (TAU)</title>
+<style>
+:root{
+  --c-hova:#4B5563; --c-leva:#2563EB; --c-bhira:#16A34A;
+  --c-seminar:#9333EA; --c-sadna:#EA580C; --c-ruach:#CA8A04;
+  --bg:#f3f4f6; --card:#fff; --ink:#111827;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Heebo,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#111827;color:#fff;padding:10px 16px;position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:12px}
+header h1{margin:0;font-size:18px}
+.copyright{font-size:11px;color:#9ca3af;white-space:nowrap}
+header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
+#controls{background:var(--card);border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;position:sticky;top:0;z-index:19}
+.grp{border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;background:#fafafa;display:flex;flex-direction:column;justify-content:flex-start}
+.grp h3{margin:0 0 6px;font-size:13px;height:26px;line-height:20px;display:flex;align-items:center;position:relative;top:-2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+#types{display:grid;grid-template-columns:repeat(3,auto);gap:6px;justify-content:start}
+#progs{display:grid;grid-template-columns:repeat(2,auto);gap:6px;justify-content:start;align-content:start}
+#types .chip{white-space:nowrap;justify-self:start}
+.chip{border:2px solid #ccc;border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;background:#fff;user-select:none;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
+.chip.off{opacity:.35}
+.chip .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px;vertical-align:middle}
+#search{font-size:14px;padding:6px 10px;border:1px solid #ccc;border-radius:8px;width:100%;height:30px;box-sizing:border-box}
+label.prog{display:flex;gap:6px;align-items:center;font-size:13px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:4px 8px;cursor:pointer}
+#stats{font-size:12px;color:#374151}
+.statrow{display:flex;gap:8px;margin-top:6px}
+.statbox{flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:1px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.statbox b{display:block;font-size:15px;line-height:1.15}
+.statbox span{font-size:10px;color:#6b7280}
+#wrap{display:flex;height:calc(100vh - 175px);min-height:480px}
+#canvasWrap{flex:1;overflow:hidden;position:relative;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;background:#fff}
+#canvasWrap.dragging{cursor:grabbing}
+#zoombar{position:absolute;top:10px;left:10px;z-index:30;display:flex;gap:6px;background:rgba(255,255,255,.9);border:1px solid #ddd;border-radius:10px;padding:5px 7px;align-items:center}
+#zoombar button{font-size:15px;width:30px;height:28px;border-radius:7px;border:1px solid #999;background:#fff;cursor:pointer}
+#zoomlvl{font-size:12px;min-width:44px;text-align:center;direction:ltr}
+#stage{position:relative;transform-origin:0 0}
+.band{position:absolute;right:0;left:0;border-top:3px solid #9ca3af;background:rgba(255,255,255,.55)}
+.band h2{position:sticky;right:8px;margin:4px 8px;font-size:15px;color:#111827;background:#fff;display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid #ddd}
+.subband{position:absolute;color:#4b5563;font-size:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1px 8px;z-index:2}
+.node{position:absolute;width:178px;min-height:50px;border-radius:10px;color:#fff;padding:6px 8px;font-size:12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);border:2px solid transparent;line-height:1.25;display:flex;flex-direction:column}
+.node .cid{font-weight:bold;font-size:12px;direction:rtl;text-align:center;background:rgba(255,255,255,.25);border-radius:6px;padding:1px 6px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.node .nm{text-align:center;flex:1;display:flex;align-items:center;justify-content:center;min-height:30px}
+.node .nm .clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.node .meta{text-align:center;font-size:10px;opacity:.9;margin-top:2px}
+body.roomy .node{min-height:74px}
+body.roomy .node .cid{display:block;text-align:center}
+.node.sel{border-color:#000;outline:3px solid #facc15}
+.node.hl-pre{outline:4px solid #facc15;outline-offset:2px}
+.node.hl-co{outline:4px dashed #22d3ee;outline-offset:2px}
+.node.dim{opacity:.18}
+#detail a{color:#1d4ed8;text-decoration:none}
+#detail a b{text-decoration:underline}
+.extcourse b{color:#b91c1c}
+.progbtn{font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #999;background:#fff;cursor:pointer;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
+.progbtn.on{background:#111827;color:#fff}
+svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
+#edges path{pointer-events:stroke;cursor:pointer}
+#side{width:320px;background:#fff;border-left:2px solid #9ca3af;padding:12px;overflow:auto}
+#side h2{font-size:15px;margin:0 0 6px}
+.kv{font-size:13px;margin:4px 0}
+.badge{display:inline-block;font-size:11px;border-radius:6px;padding:1px 8px;color:#fff;margin:1px}
+.reqkey{color:#111827;font-weight:bold;margin-top:8px}
+.reqline{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:4px 8px;margin:3px 0;line-height:1.6}
+.reqop{color:#6b7280;margin:0 6px;font-weight:bold}
+.reqor{text-align:center;color:#1e40af;font-weight:bold;margin:2px 0}
+.legend{display:flex;gap:14px;align-items:center;font-size:12px;flex-wrap:wrap}
+.sw{width:44px;height:0;border-top:3px solid #333;display:inline-block;vertical-align:middle;margin-left:6px}
+.sw.dash{border-top-style:dashed}
+.catbtn{border-radius:10px;border:1px solid #999;background:#111827;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;align-self:center;width:104px;height:104px;flex:none}
+.catbtn svg{width:65%;height:65%}
+body.dark .catbtn{background:#e5e7eb;color:#111827;border-color:#e5e7eb}
+.catcard{background:#fff;border-radius:14px;padding:16px;max-width:92vw;text-align:center;color:#111827}
+.iconbtn{width:30px;height:30px;border-radius:8px;border:1px solid #999;background:#fff;color:#111827;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+body.dark .iconbtn{background:#374151;color:#fff;border-color:#6b7280}
+body.dark .catcard{background:#1f2937;color:#e5e7eb}
+.switch{position:relative;display:inline-block;width:34px;height:18px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;inset:0;cursor:pointer;background:#cbd5e1;border-radius:18px;transition:.15s}
+.switch .slider:before{position:absolute;content:"";height:12px;width:12px;right:3px;top:3px;background:#fff;border-radius:50%;transition:.15s}
+.switch input:checked + .slider{background:#111827}
+.switch input:checked + .slider:before{transform:translateX(-16px)}
+body.dark .switch .slider{background:#4b5563}
+body.dark .switch input:checked + .slider{background:#e5e7eb}
+body.dark .switch input:checked + .slider:before{background:#111827}
+.legtog .sw{width:26px}
+.legtog{cursor:pointer;user-select:none;border:2px solid #ccc;border-radius:20px;padding:3px 10px;background:#fff;font-size:12px;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
+.legtog.off{opacity:.4;text-decoration:line-through}
+.btn{font-size:13px;padding:5px 12px;border-radius:8px;border:1px solid #999;background:#fff;cursor:pointer}
+.btn.on{background:#111827;color:#fff}
+#yearBtns .btn{height:22px;font-size:12px;padding:2px 10px;display:inline-flex;align-items:center}
+small.hint{color:#6b7280}
+body.dark{background:#0f1727;color:#e5e7eb}
+body.dark #controls{background:#111827;border-color:#374151}
+body.dark .grp{background:#1f2937;border-color:#374151;color:#e5e7eb}
+body.dark .btn,body.dark .progbtn,body.dark .chip,body.dark .legtog{background:#1f2937;border-color:#6b7280;color:#e5e7eb}
+body.dark .btn.on,body.dark .progbtn.on{background:#f9fafb;color:#111827;border-color:#f9fafb}
+body.dark #search{background:#1f2937;color:#fff;border-color:#6b7280}
+body.dark #side{background:#111827;border-color:#4b5563}
+body.dark #canvasWrap{background:#0f1727}
+body.dark .band{background:rgba(148,163,184,.07);border-color:#4b5563}
+body.dark .band h2,body.dark .subband{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
+body.dark .statbox{background:#1f2937;border-color:#4b5563}
+body.dark #stats{color:#d1d5db}
+body.dark #detail a{color:#93c5fd}
+body.dark .reqkey{color:#e5e7eb}
+body.dark .reqline{background:#1f2937;border-color:#374151}
+body.dark .reqor{color:#93c5fd}
+body.dark .extcourse b{color:#f87171}
+body.dark .cidnum{color:#9ca3af}
+body.dark small.hint{color:#9ca3af}
+body.dark #zoombar{background:rgba(17,24,39,.92);border-color:#4b5563}
+body.dark #zoombar button{background:#1f2937;color:#e5e7eb;border-color:#6b7280}
+body.dark #zoomlvl{color:#e5e7eb}
+.cidnum{color:#4b5563}
+</style>
+</head>
+<body>
+<header>
+<h1>מפת דרכים - קורסי מתמטיקה ומדעי המחשב</h1>
+<span class="copyright">© 2026 עומר למל. כל הזכויות שמורות.</span>
+</header>
+<div id="controls">
+  <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap"><span id="yearBtns"></span></div></div><div class="chips" id="progs" style="margin-top:6px"></div>
+  </div>
+  <div class="grp"><h3>סוג קורס – לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
+  <div class="grp"><h3>חיפוש (שם או מספר, למשל 2160 / 0368-2160)</h3>
+    <span style="position:relative;display:block">
+      <input id="search" placeholder="חיפוש קורס..." style="padding-left:26px">
+      <button id="clearSearch" title="נקה חיפוש" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#6b7280;display:none">×</button>
+    </span>
+    <div style="margin-top:6px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>דרישות קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>דרישות מקבילות</span></div>
+  </div>
+  <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">תצוגה</h3><label class="switch" title="מצב כהה"><input type="checkbox" id="darkTog"><span class="slider"></span></label></div><div style="margin-top:6px"><button class="progbtn" id="mRoom">מרווח</button> <button class="progbtn on" id="mCmp">דחוס</button></div><div id="stats"></div></div>
+  <button id="catBtn" class="catbtn" title="חתול אקראי"><svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="15.5" rx="4.6" ry="3.8"/><circle cx="5.6" cy="10" r="2"/><circle cx="9.4" cy="6.6" r="2.1"/><circle cx="14.6" cy="6.6" r="2.1"/><circle cx="18.4" cy="10" r="2"/></svg></button>
+</div>
+<div id="catModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
+  <div class="catcard">
+    <div style="display:flex;align-items:center;margin-bottom:8px"><div style="font-weight:bold;flex:1;text-align:center">הפסקת חתול!</div><button class="iconbtn" id="catMute" title="השתק"></button></div>
+    <img id="catImg" style="display:none;max-width:70vw;max-height:60vh;border-radius:10px" alt="חתול אקראי">
+    <div id="catErr" style="display:none;color:#b91c1c">אין חתול זמין (בדקו חיבור לאינטרנט)</div>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
+      <button class="progbtn" id="catMore">חתול נוסף</button>
+      <button class="progbtn" id="catClose">סגור</button>
+    </div>
+  </div>
+</div>
+<div id="wrap">
+  <div id="side"><h2>פרטי קורס</h2><div id="detail"><small class="hint">לחצו על קורס במפה.</small></div></div>
+  <div id="canvasWrap">
+    <div id="zoombar"><button id="zin" title="התקרב">+</button><span id="zoomlvl">100%</span><button id="zout" title="התרחק">−</button><button id="zreset" title="איפוס תצוגה" style="width:auto;padding:0 8px;font-size:12px">איפוס</button></div>
+    <div id="stage"><svg id="edges"></svg><div id="nodes"></div></div></div>
+</div>
+<script>
+const COLORS={'חובה':'var(--c-hova)','ליבה':'var(--c-leva)','בחירה':'var(--c-bhira)','סמינר':'var(--c-seminar)','סדנה':'var(--c-sadna)','שאר רוח':'var(--c-ruach)'};
+const PROGN={};
+let DATA, selProg='dual', year='2026', offTypes=new Set(['שאר רוח','סדנה','סמינר']), query='', selected=null, showPreE=true, showCoE=true;
+try{
+  const s=JSON.parse(localStorage.getItem('tauFilters')||'{}');
+  if(Array.isArray(s.off))offTypes=new Set(s.off);
+  if(typeof s.pre==='boolean')showPreE=s.pre;
+  if(typeof s.co==='boolean')showCoE=s.co;
+  if(typeof s.prog==='string')selProg=s.prog;
+  if(typeof s.year==='string')year=s.year;
+}catch(_){}
+function saveFilters(){try{localStorage.setItem('tauFilters',JSON.stringify({off:[...offTypes],pre:showPreE,co:showCoE,prog:selProg,year}));}catch(_){}}
+let byId={};
+let hlPre=new Set(), hlCo=new Set();
+let zoom=1,panX=0,panY=0,lastW=0,lastH=0,lastPos={};
+const PAN_MARGIN=150;
+function clampPan(){ // keep at least PAN_MARGIN px of the graph visible (stage is right-aligned in RTL, top-aligned)
+  if(!lastW||!lastH)return;
+  const wrap=document.getElementById('canvasWrap');
+  const Ww=wrap.clientWidth,Wh=wrap.clientHeight;
+  const L0x=Ww-lastW,L0y=0,sw=lastW*zoom,sh=lastH*zoom;
+  panX=Math.min((Ww-PAN_MARGIN)-L0x,Math.max(PAN_MARGIN-L0x-sw,panX));
+  panY=Math.min((Wh-PAN_MARGIN)-L0y,Math.max(PAN_MARGIN-L0y-sh,panY));}
+function applyView(){clampPan();
+  document.getElementById('stage').style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
+  const zl=document.getElementById('zoomlvl');if(zl)zl.textContent=Math.round(zoom*100)+'%';}
+function zoomAt(mx,my,f){const wrap=document.getElementById('canvasWrap');
+  if(!lastW)return;
+  const nz=Math.min(3,Math.max(0.3,zoom*f));
+  // exact anchor math from state only (never read mid-animation rects):
+  // stage layout offset is constant: right-aligned in RTL, top-aligned
+  const L0x=wrap.clientWidth-lastW,L0y=0;
+  const wx=(mx-L0x-panX)/zoom,wy=(my-L0y-panY)/zoom; // world point under cursor
+  zoom=nz;panX=mx-L0x-wx*nz;panY=my-L0y-wy*nz;applyView();}
+function centerOn(id){ // glide the node into view, but only if it's off-screen
+  const p=lastPos&&lastPos[id];if(!p||!lastW)return;
+  const wrap=document.getElementById('canvasWrap');
+  const Ww=wrap.clientWidth,Wh=wrap.clientHeight,L0x=Ww-lastW;
+  const cy=(p.top+p.bottom)/2;
+  const sx=L0x+p.cx*zoom+panX,syy=cy*zoom+panY;
+  const M=60;
+  if(sx>M&&sx<Ww-M&&syy>M&&syy<Wh-M)return;
+  document.getElementById('stage').style.transition='transform .25s ease-out';
+  panX=Ww/2-L0x-p.cx*zoom;panY=Wh/2-cy*zoom;applyView();}
+const BANDS=[{y:1,t:'שנה א׳'},{y:2,t:'שנה ב׳'},{y:3,t:'שנה ג׳ (כולל שנים ב׳+ג׳)'},{y:4,t:'שאר רוח / אחר'}];
+const NW=178,GX=28,GY=28,PAD=60,TOPH=46,SUBH=28,BANDPAD=24;
+let NH=66; // node height unit: 66 compact, 86 roomy (set per render from nodeMode)
+let nodeMode='compact';
+try{nodeMode=localStorage.getItem('tauNodeMode')||'roomy';}catch(_){}
+let darkMode=false;
+try{darkMode=localStorage.getItem('tauDark')==='1';}catch(_){}
+function applyDark(){document.body.classList.toggle('dark',darkMode);
+  const b=document.getElementById('darkTog');if(b)b.checked=darkMode;}
+
+fetch('data.json').then(r=>r.json()).then(d=>{DATA=d;byId={};d.courses.forEach(c=>byId[c.id]=c);
+  const dys=[...new Set(d.courses.flatMap(c=>Object.keys(c.programs[selProg]||{})))].sort();
+  if(dys.length)year=dys[dys.length-1]; // default to latest curriculum
+  buildControls();render();});
+
+function occOf(c){ // occurrence for current year+program selection (single program)
+  return (c.programs[selProg]||{})[year]||null;
+}
+function mainType(c){const o=occOf(c);return o?o.type:'בחירה';}
+function mainYear(c){const o=occOf(c);if(!o)return 4;return o.year===0?3:o.year;}
+
+function buildControls(){
+  const pc=document.getElementById('progs');
+  const syncP=()=>pc.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===selProg));
+  DATA.programs.forEach(p=>{PROGN[p.id]=p.name;});
+  if(!PROGN[selProg])selProg='dual'; // saved program may predate current data
+  const PORDER=['dual','csai','cs','math']; // display order
+  DATA.programs.slice().sort((a,b)=>{const ia=PORDER.indexOf(a.id),ib=PORDER.indexOf(b.id);
+    return(ia<0?99:ia)-(ib<0?99:ib);}).forEach(p=>{const b=document.createElement('button');b.className='progbtn';b.dataset.p=p.id;b.textContent=p.name;
+    b.onclick=()=>selectProg(p.id);pc.appendChild(b);});
+  syncP();
+  const yearsOf=p=>[...new Set(DATA.courses.flatMap(c=>Object.keys(c.programs[p]||{})))].sort(); // ascending: latest ends up leftmost
+  const syncYears=()=>{const ys=yearsOf(selProg);if(!ys.includes(year))year=ys[ys.length-1];
+    const yc=document.getElementById('yearBtns');yc.innerHTML='';
+    yearsOf(selProg).forEach(y=>{const b=document.createElement('button');b.className='btn'+(y===year?' on':'');b.textContent=y;
+      b.onclick=()=>{year=y;selected=null;syncYears();saveFilters();render();};yc.appendChild(b);});};
+  const selectProg=p=>{selProg=p;selected=null;
+    const ys=yearsOf(p);if(!ys.includes(year))year=ys[ys.length-1]; // ascending: last is latest
+    syncP();syncYears();saveFilters();render();};
+  syncYears();
+  const tc=document.getElementById('types');
+  Object.keys(COLORS).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
+    s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});
+  const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
+  const syncClear=()=>{cs.style.display=si.value?'block':'none';};
+  si.addEventListener('input',()=>{query=si.value.trim();syncClear();render();});
+  cs.onclick=()=>{si.value='';query='';syncClear();si.focus();render();};
+  const syncLeg=()=>{document.getElementById('legPre').classList.toggle('off',!showPreE);document.getElementById('legCo').classList.toggle('off',!showCoE);};
+  const syncMode=()=>{document.getElementById('mCmp').classList.toggle('on',nodeMode==='compact');document.getElementById('mRoom').classList.toggle('on',nodeMode==='roomy');};
+  const setMode=m=>{nodeMode=m;try{localStorage.setItem('tauNodeMode',m);}catch(_){}syncMode();render();};
+  document.getElementById('mCmp').onclick=()=>setMode('compact');
+  document.getElementById('mRoom').onclick=()=>setMode('roomy');
+  syncMode();
+  document.getElementById('darkTog').onchange=e=>{darkMode=e.target.checked;
+    try{localStorage.setItem('tauDark',darkMode?'1':'0');}catch(_){}applyDark();render();};
+  applyDark();
+  syncLeg();
+  // cat break: synthesized meow + random cat popup
+  document.getElementById('catBtn').onclick=()=>{openCat();};
+  document.getElementById('catMore').onclick=()=>{playMeow();loadCat();};
+  document.getElementById('catMute').onclick=e=>{catMuted=!catMuted;
+    try{localStorage.setItem('tauMute',catMuted?'1':'0');}catch(_){}syncMute();};
+  document.getElementById('catClose').onclick=()=>{document.getElementById('catModal').style.display='none';};
+  document.getElementById('catModal').addEventListener('click',e=>{if(e.target.id==='catModal')e.target.style.display='none';});
+  syncCatSize();
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>syncCatSize());
+  document.getElementById('legPre').onclick=()=>{showPreE=!showPreE;syncLeg();saveFilters();render();};
+  document.getElementById('legCo').onclick=()=>{showCoE=!showCoE;syncLeg();saveFilters();render();};
+  // edge hover: temporarily thicken + fully reveal the hovered arrow (no re-render)
+  const svgEl=document.getElementById('edges');
+  svgEl.onmouseover=e=>{const p=e.target.closest&&e.target.closest('path[data-e]');if(!p||!p.dataset.w)return;
+    p.style.strokeWidth=parseFloat(p.dataset.w)+1.5;p.style.opacity='1';};
+  svgEl.onmouseout=e=>{const p=e.target.closest&&e.target.closest('path[data-e]');if(!p||!p.dataset.w)return;
+    p.style.strokeWidth=p.dataset.w;p.style.opacity=p.dataset.o;};
+  // click away from any course (on empty canvas) clears the selection
+  const wrap=document.getElementById('canvasWrap');
+  wrap.addEventListener('click',e=>{
+    if(!e.target.closest('.node')&&selected){selected=null;
+      document.getElementById('detail').innerHTML='<small class="hint">לחצו על קורס במפה.</small>';
+      render();}});
+  // pan (drag with mouse) + zoom (wheel / buttons), transform on #stage
+  // (zoom/panX/panY/applyView/zoomAt live at top level so render() can clamp too)
+  let drag=null,justDragged=false;
+  wrap.addEventListener('wheel',e=>{e.preventDefault();
+    const r=wrap.getBoundingClientRect();
+    if(e.ctrlKey||e.metaKey){ // zoom anchored at cursor (instant, exact)
+      const d=Math.max(-120,Math.min(120,e.deltaY*(e.deltaMode?16:1)));
+      document.getElementById('stage').style.transition='none';
+      zoomAt(e.clientX-r.left,e.clientY-r.top,Math.pow(1.0012,-d));
+      return;
+    }
+    document.getElementById('stage').style.transition='transform .15s ease-out'; // smooth pan glide
+    let dx=e.deltaX,dy=e.deltaY; // pan (trackpads send both axes)
+    if(e.shiftKey&&!dx){dx=dy;dy=0;}
+    const unit=e.deltaMode?16:1;
+    panX-=dx*unit;panY-=dy*unit;applyView();},{passive:false});
+  wrap.addEventListener('dblclick',e=>{
+    if(e.target.closest('#zoombar'))return;
+    const r=wrap.getBoundingClientRect();
+    document.getElementById('stage').style.transition='transform .12s ease-out';
+    zoomAt(e.clientX-r.left,e.clientY-r.top,e.shiftKey?1/1.4:1.4);});
+  wrap.addEventListener('pointerdown',e=>{
+    if(e.target.closest('#zoombar'))return; // let toolbar buttons work normally
+    document.getElementById('stage').style.transition='none';
+    drag={x:e.clientX,y:e.clientY,px:panX,py:panY,moved:false};});
+  window.addEventListener('pointermove',e=>{if(!drag)return;
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(Math.abs(dx)+Math.abs(dy)>4)drag.moved=true;
+    if(drag.moved){panX=drag.px+dx;panY=drag.py+dy;applyView();wrap.classList.add('dragging');}});
+  const endDrag=()=>{if(drag&&drag.moved){justDragged=true;setTimeout(()=>justDragged=false,400);}drag=null;wrap.classList.remove('dragging');};
+  window.addEventListener('pointerup',endDrag);
+  window.addEventListener('pointercancel',endDrag);
+  window.addEventListener('blur',endDrag);
+  // a drag must not trigger select/deselect clicks
+  wrap.addEventListener('click',e=>{if(justDragged){e.stopPropagation();e.preventDefault();justDragged=false;}},true);
+  const zoomCenter=f=>{document.getElementById('stage').style.transition='transform .12s ease-out';
+    const r=wrap.getBoundingClientRect();zoomAt(r.width/2,r.height/2,f);};
+  document.getElementById('zin').onclick=()=>zoomCenter(1.25);
+  document.getElementById('zout').onclick=()=>zoomCenter(1/1.25);
+  document.getElementById('zreset').onclick=()=>{document.getElementById('stage').style.transition='transform .15s ease-out';zoom=1;panX=0;panY=0;applyView();};
+}
+function matchQ(c){if(!query)return true;const q=query.replace('-','');return c.name.includes(query)||c.id.replace('-','').includes(q);}
+function meow(){try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  const ctx=meow.ctx||(meow.ctx=new AC());
+  if(ctx.state==='suspended')ctx.resume();
+  const t=ctx.currentTime,osc=ctx.createOscillator(),g=ctx.createGain();
+  const lfo=ctx.createOscillator(),lg=ctx.createGain();
+  osc.type='sawtooth';
+  osc.frequency.setValueAtTime(420,t);
+  osc.frequency.linearRampToValueAtTime(880,t+0.18);
+  osc.frequency.linearRampToValueAtTime(520,t+0.45);
+  lfo.type='sine';lfo.frequency.value=28;lg.gain.value=25;
+  lfo.connect(lg);lg.connect(osc.frequency);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(0.25,t+0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+  osc.connect(g);g.connect(ctx.destination);
+  osc.start(t);lfo.start(t);osc.stop(t+0.55);lfo.stop(t+0.55);
+}catch(_){}}
+function loadCat(){const img=document.getElementById('catImg'),err=document.getElementById('catErr');
+  err.style.display='none';img.style.display='none';
+  img.onload=()=>{img.style.display='';};
+  img.onerror=()=>{err.style.display='';};
+  img.src='https://cataas.com/cat?'+Date.now();}
+function openCat(){document.getElementById('catModal').style.display='flex';syncMute();playMeow();loadCat();}
+let catMuted=false;
+try{catMuted=localStorage.getItem('tauMute')==='1';}catch(_){}
+let catAudio=null;
+function playMeow(){ // real recording, synth fallback
+  if(catMuted)return;
+  try{
+    if(!catAudio)catAudio=new Audio('meow.ogg');
+    catAudio.currentTime=0;
+    const p=catAudio.play();
+    if(p&&p.catch)p.catch(()=>meow());
+  }catch(_){meow();}}
+function syncMute(){const b=document.getElementById('catMute');if(!b)return;
+  const on='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  const off='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
+  b.innerHTML=catMuted?off:on;b.title=catMuted?'בטל השתק':'השתק';}
+
+function render(){
+  if(!DATA)return;
+  NH=nodeMode==='roomy'?86:66;
+  document.body.classList.toggle('roomy',nodeMode==='roomy');
+  let courses=DATA.courses.filter(c=>occOf(c));
+  courses=courses.filter(c=>!offTypes.has(mainType(c))&&matchQ(c));
+  const ids=new Set(courses.map(c=>c.id));
+  const layoutEdges=DATA.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
+  const edges=layoutEdges.filter(e=>e.kind==='co'?showCoE:showPreE); // only affects drawing, never layout
+  // highlight: direct prerequisites (solid) and parallel (dashed) of selected course
+  hlPre=new Set();hlCo=new Set();
+  if(selected){layoutEdges.filter(e=>e.to===selected).forEach(e=>{(e.kind==='co'?hlCo:hlPre).add(e.from);});}
+  document.getElementById('stats').innerHTML=`<div class="statrow"><div class="statbox"><b>${courses.length}</b><span>קורסים</span></div><div class="statbox"><b>${edges.length}</b><span>חצים</span></div></div>`;
+  const wrapW=document.getElementById('canvasWrap').clientWidth-40;
+  // depth over pre-edges (longest path from sources)
+  const depth={};courses.forEach(c=>depth[c.id]=0);
+  for(let k=0;k<100;k++){let ch=false;
+    for(const e of layoutEdges){if(e.kind!=='pre')continue;
+      if(depth[e.to]<depth[e.from]+1){depth[e.to]=depth[e.from]+1;ch=true;}}
+    if(!ch)break;}
+  const semOf=c=>(((c.programs[selProg]||{})[year]||{}).sem||'');
+  const semRank=s=>s==='א'?0:s==='ב'?2:1;
+  const semName=['סמסטר א׳','ללא סמסטר','סמסטר ב׳'];
+  const inBand=(c,y)=>mainYear(c)===y||(y===3&&mainYear(c)===0);
+  // pass 1: chain-lane placement. Sections stack as band -> semester, so a
+  // סמסטר א׳ course is always above סמסטר ב׳. A course reuses its
+  // prerequisite's lane when free (straight vertical arrows) and is always
+  // placed strictly below its same-section prerequisites.
+  const laneOf={};let nLanes=0;
+  const MAXL=8; // lane cap: forces a balanced (not too wide, not too tall) map
+  const freeLane=used=>{let l=0;while(l<nLanes&&used.has(l))l++;return l<nLanes?l:null;};
+  const parentLanes=c=>{const pre=[],co=[],seen=new Set();
+    for(const e of layoutEdges){if(e.to!==c.id)continue;const l=laneOf[e.from];
+      if(l==null||seen.has(l))continue;seen.add(l);(e.kind==='pre'?pre:co).push(l);}
+    return{pre,co};};
+  const hasVisParent=c=>layoutEdges.some(e=>e.to===c.id);
+  const hasVisChild=c=>layoutEdges.some(e=>e.from===c.id);
+  const sections=[];
+  BANDS.forEach(b=>{for(let s=0;s<3;s++){
+    const list=courses.filter(c=>inBand(c,b.y)&&semRank(semOf(c))===s)
+      .sort((a,c2)=>depth[a.id]-depth[c2.id]||(a.id<c2.id?-1:1));
+    if(!list.length)continue;
+    const rows=[],rowOf={};
+    const depthSort=(a,b)=>depth[a.id]-depth[b.id]||(a.id<b.id?-1:1);
+    const placeChain=c=>{ // chain members: full lane treatment (vertical arrows)
+      let rMin=0;
+      for(const e of layoutEdges){if(e.to!==c.id||e.kind!=='pre')continue;
+        if(rowOf[e.from]!=null&&rowOf[e.from]+1>rMin)rMin=rowOf[e.from]+1;}
+      const{pre,co}=parentLanes(c);
+      if(!hasVisParent(c)&&nLanes<MAXL){ // chain root: own lane
+        while(rows.length<=rMin)rows.push([]);
+        const lane=nLanes++;
+        rows[rMin].push(c.id);rowOf[c.id]=rMin;laneOf[c.id]=lane;return;
+      }
+      for(let r=rMin;;r++){
+        while(rows.length<=r)rows.push([]);
+        const used=new Set(rows[r].map(id=>laneOf[id]));
+        let lane=pre.find(l=>!used.has(l));
+        if(lane!=null){rows[r].push(c.id);rowOf[c.id]=r;laneOf[c.id]=lane;break;}
+        if(r===rMin)lane=co.find(l=>!used.has(l)); // parallel: take if free now, never wait
+        if(lane!=null){rows[r].push(c.id);rowOf[c.id]=r;laneOf[c.id]=lane;break;}
+        if(pre.length&&r-rMin<4)continue; // wait only for a prerequisite lane
+        if(nLanes<MAXL){ // open a lane
+          const lane2=nLanes++;
+          rows[r].push(c.id);rowOf[c.id]=r;laneOf[c.id]=lane2;break;
+        }
+        lane=freeLane(used); // capped: reuse (fresh row always resolves)
+        if(lane==null)continue;
+        rows[r].push(c.id);rowOf[c.id]=r;laneOf[c.id]=lane;break;
+      }
+    };
+    const placeEnd=c=>{ // endpoints: dense fill, widen only up to the lane cap
+      let rMin=0;
+      for(const e of layoutEdges){if(e.to!==c.id||e.kind!=='pre')continue;
+        if(rowOf[e.from]!=null&&rowOf[e.from]+1>rMin)rMin=rowOf[e.from]+1;}
+      if(!nLanes){while(rows.length<=rMin)rows.push([]);
+        rows[rMin].push(c.id);rowOf[c.id]=rMin;laneOf[c.id]=nLanes++;return;}
+      const{pre,co}=parentLanes(c);
+      for(let r=rMin;;r++){
+        while(rows.length<=r)rows.push([]);
+        const used=new Set(rows[r].map(id=>laneOf[id]));
+        let lane=pre.find(l=>!used.has(l));
+        if(lane==null)lane=co.find(l=>!used.has(l));
+        if(lane==null)lane=freeLane(used);
+        if(lane!=null){rows[r].push(c.id);rowOf[c.id]=r;laneOf[c.id]=lane;break;}
+        if(nLanes<MAXL){const lane2=nLanes++;
+          rows[r].push(c.id);rowOf[c.id]=r;laneOf[c.id]=lane2;break;} // row full: widen
+        // capped & full: next row
+      }
+    };
+    list.filter(c=>hasVisChild(c)).sort(depthSort).forEach(placeChain);
+    list.filter(c=>!hasVisChild(c)).sort(depthSort).forEach(placeEnd);
+    sections.push({band:b.y,sem:s,rows,n:list.length});
+  }});
+  // compaction: pull each course up within its own lane as far as its
+  // same-section prerequisites allow (removes empty cells, keeps verticality)
+  const inSection=(s,id)=>s.rows.some(r=>r.includes(id));
+  sections.forEach(s=>{
+    const rowOf={};s.rows.forEach((rids,r)=>rids.forEach(id=>rowOf[id]=r));
+    const occ={};
+    s.rows.forEach((rids,r)=>rids.forEach(id=>{(occ[laneOf[id]]=occ[laneOf[id]]||new Set()).add(r);}));
+    const allIds=[];s.rows.forEach(rids=>rids.forEach(id=>allIds.push(id)));
+    allIds.sort((a,b)=>depth[a]-depth[b]||(a<b?-1:1));
+    allIds.forEach(id=>{
+      const lane=laneOf[id];
+      let rMin=0;
+      for(const e of layoutEdges){if(e.to!==id||e.kind!=='pre')continue;
+        if(rowOf[e.from]!=null&&inSection(s,e.from)&&rowOf[e.from]+1>rMin)rMin=rowOf[e.from]+1;}
+      occ[lane].delete(rowOf[id]);
+      let r=rMin;while(occ[lane].has(r))r++;
+      rowOf[id]=r;occ[lane].add(r);
+    });
+    const maxR=Math.max(-1,...Object.values(rowOf));
+    const nr=[];for(let r=0;r<=maxR;r++)nr.push([]);
+    Object.keys(rowOf).forEach(id=>nr[rowOf[id]].push(id));
+    s.rows=nr.filter(r=>r.length);
+  });
+  // pass 2: geometry (canvas width follows the lane count)
+  const needW=PAD*2+nLanes*NW+Math.max(0,nLanes-1)*GX;
+  const W=Math.max(needW,wrapW);
+  const nodesEl=document.getElementById('nodes');nodesEl.innerHTML='';
+  const pos={};let yOff=0;
+  BANDS.forEach(b=>{
+    const secs=sections.filter(s=>s.band===b.y);
+    if(!secs.length)return;
+    const div=document.createElement('div');div.className='band';nodesEl.appendChild(div);
+    const top=yOff,total=secs.reduce((a,s)=>a+s.n,0);
+    yOff+=TOPH;
+    const multi=secs.length>1;
+    secs.forEach(s=>{
+      if(multi){const lb=document.createElement('div');lb.className='subband';
+        lb.style.top=(yOff+3)+'px';lb.style.right=PAD+'px';lb.textContent=semName[s.sem];
+        nodesEl.appendChild(lb);yOff+=SUBH;}
+      s.top=yOff;
+      yOff+=s.rows.length*(NH+GY)+10;
+    });
+    yOff+=BANDPAD;
+    div.style.top=top+'px';div.style.height=(yOff-top)+'px';div.style.width=W+'px';
+    div.innerHTML=`<h2>${BANDS.find(x=>x.y===b.y).t} (${total})</h2>`;
+  });
+  sections.forEach(s=>{s.rows.forEach((rids,r)=>{rids.forEach(id=>{
+      const c=byId[id];const lane=laneOf[id];
+      const right=PAD+lane*(NW+GX); const yy=s.top+r*(NH+GY);
+      pos[id]={cx:W-right-NW/2,left:W-right-NW,right:W-right,top:yy,bottom:yy+NH,lane};
+      const t=mainType(c);
+      let cls='node';
+      if(selected===id)cls+=' sel';
+      else if(selected&&hlPre.has(id))cls+=' hl-pre';
+      else if(selected&&hlCo.has(id))cls+=' hl-co';
+      if(query&&!matchQ(c))cls+=' dim';
+      else if(selected&&selected!==id&&!hlPre.has(id)&&!hlCo.has(id))cls+=' dim';
+      const el=document.createElement('div');el.className=cls;
+      el.style.right=right+'px';el.style.top=yy+'px';el.style.background=COLORS[t];
+      el.innerHTML=nodeMode==='roomy'
+        ?`<div class="cid"><span dir="ltr">${c.id}</span></div><div class="nm"><span class="clamp">${c.name}</span></div><div class="meta" dir="rtl">${c.credits?c.credits+' ש״ס':''}</div>`
+        :`<div class="cid"><span dir="ltr">${c.id}</span><span dir="rtl">${c.credits?c.credits+' ש״ס':''}</span></div><div class="nm"><span class="clamp">${c.name}</span></div>`;
+      el.title=`${c.name} ${c.id} (${t})`;el.onclick=()=>{selected=c.id;showDetail(c);render();centerOn(c.id);};
+      nodesEl.appendChild(el);
+    });});});
+  const stage=document.getElementById('stage');stage.style.width=W+'px';stage.style.height=yOff+'px';
+  lastPos=pos;
+  lastW=W;lastH=yOff;applyView(); // store canvas size + enforce pan limits
+  const svg=document.getElementById('edges');svg.setAttribute('width',W);svg.setAttribute('height',yOff);
+  const markers=`<defs>
+    <marker id="ah" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="${darkMode?'#9ca3af':'#6b7280'}"/></marker>
+    <marker id="ahP" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="#d97706"/></marker>
+    <marker id="ahC" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="#0891b2"/></marker></defs>`;
+  const inE={},outE={};
+  edges.forEach(e=>{(inE[e.to]=inE[e.to]||[]).push(e);(outE[e.from]=outE[e.from]||[]).push(e);});
+  Object.values(inE).forEach(l=>l.sort((a,b)=>a.from<b.from?-1:1));
+  Object.values(outE).forEach(l=>l.sort((a,b)=>a.to<b.to?-1:1));
+  const spread=(l,e,m)=>{const i=l.indexOf(e);return Math.max(-m,Math.min(m,(i-(l.length-1)/2)*14));};
+  svg.innerHTML=markers+edges.map((e,idx)=>{const a=pos[e.from],b=pos[e.to];if(!a||!b)return'';
+      const x1=a.cx,y1=a.bottom,x2=b.cx,y2=b.top;
+      let stroke=darkMode?'#9ca3af':'#6b7280',w=1.4,o=darkMode?0.12:0.22,mk='ah',hide='';
+      if(selected){
+        if(e.to===selected&&e.kind==='pre'){stroke='#d97706';w=3;o=1;mk='ahP';}
+        else if(e.to===selected&&e.kind==='co'){stroke='#0891b2';w=3;o=1;mk='ahC';}
+        else hide='visibility="hidden"';
+      }
+      const dash=e.kind==='co'?'stroke-dasharray="7 5"':'';
+      const kind=e.kind==='co'?'מקביל':'קדם';
+      let d;
+      if(a.bottom<=b.top+4){ // source above target: exit bottom, enter top
+        if(a.lane===b.lane&&Math.abs(x1-x2)<1){d=`M${x1},${y1} L${x2},${y2-3}`;} // same lane: straight drop
+        else{const dx1=spread(outE[e.from],e,70),dx2=spread(inE[e.to],e,70);
+          const mid=(y1+y2)/2+((idx*37)%7-3)*5;
+          d=`M${x1+dx1},${y1} L${x1+dx1},${mid} L${x2+dx2},${mid} L${x2+dx2},${y2-3}`;}
+      }else if(a.top>=b.bottom-4){ // source below target (rare): exit top, enter bottom
+        const mid=(a.top+b.bottom)/2+((idx*37)%7-3)*5;
+        d=`M${x1},${a.top} L${x1},${mid} L${x2},${mid} L${x2},${b.bottom+2}`;
+      }else{ // side by side: exit/enter the facing sides
+        const y=(Math.max(a.top,b.top)+Math.min(a.bottom,b.bottom))/2;
+        const yyA=Math.max(a.top+10,Math.min(a.bottom-10,y+spread(outE[e.from],e,31)));
+        const yyB=Math.max(b.top+10,Math.min(b.bottom-10,y+spread(inE[e.to],e,31)));
+        if(x1<x2){d=`M${a.right},${yyA} L${b.left-3},${yyB}`;}
+        else{d=`M${a.left},${yyA} L${b.right+3},${yyB}`;}
+      }
+      return `<path data-e="1" data-w="${w}" data-o="${o}" d="${d}" fill="none" stroke="${stroke}" stroke-width="${w}" opacity="${o}" ${dash} ${hide} marker-end="url(#${mk})"><title>${nameOf(e.from)} → ${nameOf(e.to)} (${kind})</title></path>`;}).join('');
+}
+function nameOf(id){if(byId[id])return byId[id].name;if(DATA.extNames&&DATA.extNames[id])return DATA.extNames[id];return id;}
+function courseLink(id){const nm=nameOf(id);
+  if(byId[id])return `<a href="#" data-go="${id}"><b>${nm}</b> <span dir="ltr" class="cidnum">(${id})</span></a>`;
+  return `<span class="extcourse" title="קורס זה אינו מופיע במפה"><b>${nm}</b> <span dir="ltr">(${id})</span></span>`;}
+function renderLogic(groups){
+  if(!groups||!groups.length)return'—';
+  return groups.map(g=>`<div class="reqline">${g.map(courseLink).join('<span class="reqop">וגם</span>')}</div>`).join('<div class="reqor">או</div>');
+}
+function linkList(ids){if(!ids.length)return'—';return ids.map(id=>`<a href="#" data-go="${id}">${nameOf(id)}</a>`).join(' · ');}
+function showDetail(c){
+  const o=occOf(c);
+  const ramaShort=o?o.rama.replace(/\s*-\s*(קורסי\s)?(חובה|בחירה|ליבה|סמינר|סדנה).*$/,'').trim(): '';
+  const occ=o?`<div>${ramaShort}${(!/סמסטר/.test(ramaShort)&&o.sem)?' · סמסטר '+o.sem:''}</div>`:'';
+  const next=DATA.edges.filter(e=>e.from===c.id);
+  const links=(DATA.programs||[]).filter(p=>c.programs[p.id]).map(p=>{
+    const nm=p.id==='dual'?'ידיעון דו-חוגי':('ידיעון '+p.name);
+    return Object.keys(c.programs[p.id]).sort().map(y=>{
+      const url=p['url'+y];
+      return url?`<div class="kv"><a target="_blank" href="${url}">${nm} ${y}</a></div>`:'';}).join('');}).join('');
+  document.getElementById('detail').innerHTML=`<h2>${c.name}</h2>
+    <div class="kv"><b style="direction:ltr">${c.id}</b> · ${c.credits} ש״ס · <span class="badge" style="background:${COLORS[mainType(c)]}">${mainType(c)}</span></div>${occ}
+    <div class="kv"><div class="reqkey">דרישות קדם:</div>${renderLogic(c.reqPre)}</div>
+    <div class="kv"><div class="reqkey">דרישות מקבילות:</div>${renderLogic(c.reqCo)}</div>
+    <div class="kv"><b>קורסים שאפשר לקחת אחריו:</b><br>${next.length?next.map(e=>`${courseLink(e.to)} (${e.kind==='co'?'מקביל':'קדם'})`).join(' · '):'—'}</div>
+    <div class="kv"><small class="hint">הערה: לימוד הקורס בעבר וזכאות לגשת לבחינה מאפשרים רישום לקורס.</small></div>${links}`;
+  document.querySelectorAll('#detail a[data-go]').forEach(a=>a.onclick=ev=>{ev.preventDefault();const t=DATA.courses.find(x=>x.id===a.dataset.go);if(t){selected=t.id;showDetail(t);render();centerOn(t.id);}});
+}
+function syncCatSize(){try{
+  const btn=document.getElementById('catBtn');if(!btn)return;
+  const hs=[...document.querySelectorAll('#controls .grp')].map(g=>g.getBoundingClientRect().height);
+  if(!hs.length)return;
+  const h=Math.max(44,Math.round(Math.max(...hs)));
+  btn.style.width=h+'px';btn.style.height=h+'px';
+}catch(_){}}
+window.addEventListener('resize',()=>{render();syncCatSize();});
+</script>
+</body>
+</html>
