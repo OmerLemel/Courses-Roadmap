@@ -273,10 +273,11 @@ function buildControls(){
   document.getElementById('catMore').onclick=()=>{playMeow();loadCat();};
   document.getElementById('catMute').onclick=e=>{catMuted=!catMuted;
     try{localStorage.setItem('tauMute',catMuted?'1':'0');}catch(_){}syncMute();};
-  document.getElementById('catClose').onclick=()=>{document.getElementById('catModal').style.display='none';};
-  document.getElementById('catModal').addEventListener('click',e=>{if(e.target.id==='catModal')e.target.style.display='none';});
-  try{catAudio=new Audio('meow.ogg');catAudio.preload='auto';catAudio.load();}catch(_){}
-  prefetchCat();
+  document.getElementById('catClose').onclick=()=>{hideCat();};
+  document.getElementById('catModal').addEventListener('click',e=>{if(e.target.id==='catModal')hideCat();});
+  try{if(!catAudio){catAudio=new Audio('meow.ogg');catAudio.preload='auto';catAudio.load();}}catch(_){}
+  prefetchCat(); // warm immediately so the first click is never cold
+  window.addEventListener('pointerdown',()=>prefetchCat(),{once:true}); // extra warm-up on first interaction
   syncCatSize();
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>syncCatSize());
   document.getElementById('legPre').onclick=()=>{showPreE=!showPreE;syncLeg();saveFilters();render();};
@@ -353,14 +354,24 @@ function meow(){try{
   osc.connect(g);g.connect(ctx.destination);
   osc.start(t);lfo.start(t);osc.stop(t+0.55);lfo.stop(t+0.55);
 }catch(_){}}
-let nextCat=null;
-function prefetchCat(){try{const u='https://cataas.com/cat?'+Date.now();const im=new Image();im.src=u;nextCat={u};}catch(_){}}
-function loadCat(){const img=document.getElementById('catImg'),err=document.getElementById('catErr'),sp=document.getElementById('catSpin');
+const CATQ=[]; // warm queue: up to 2 prefetched cats ready to show instantly
+function catURL(){return 'https://cataas.com/cat?width=900&t='+Date.now()+Math.floor(Math.random()*1e6);}
+function prefetchCat(){try{
+  while(CATQ.length<2){const u=catURL();const im=new Image();im.src=u;CATQ.push({u,im});}
+}catch(_){}}
+let catTimer=null;
+function hideCat(){clearTimeout(catTimer);document.getElementById('catModal').style.display='none';}
+function loadCat(retry){const img=document.getElementById('catImg'),err=document.getElementById('catErr'),sp=document.getElementById('catSpin');
   err.style.display='none';img.style.display='none';sp.style.display='';
-  img.onload=()=>{sp.style.display='none';img.style.display='';};
-  img.onerror=()=>{sp.style.display='none';err.style.display='';};
-  const useNext=nextCat;nextCat=null;prefetchCat(); // show prefetched instantly, warm up the following one
-  img.src=useNext?useNext.u:'https://cataas.com/cat?'+Date.now();}
+  clearTimeout(catTimer);
+  const useNext=CATQ.length?CATQ.shift():null;
+  prefetchCat(); // top up behind (async, cheap)
+  img.onload=()=>{clearTimeout(catTimer);sp.style.display='none';img.style.display='';};
+  img.onerror=()=>{clearTimeout(catTimer);sp.style.display='none';err.style.display='';};
+  img.src=useNext?useNext.u:catURL();
+  catTimer=setTimeout(()=>{ // stuck backend: retry once with a fresh URL, then fail honestly
+    if(!retry)loadCat(true);else{sp.style.display='none';err.style.display='';}
+  },4000);}
 function openCat(){document.getElementById('catModal').style.display='flex';syncMute();playMeow();loadCat();}
 let catMuted=false;
 try{catMuted=localStorage.getItem('tauMute')==='1';}catch(_){}
