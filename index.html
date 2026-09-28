@@ -82,9 +82,9 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
   #yearBtns .btn{height:30px}
   #zoombar button{width:36px;height:34px}
   #zoombar{top:auto;bottom:10px}
-  header h1{font-size:14px;min-width:0}
+  header h1{font-size:14px;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   header{flex-wrap:wrap;row-gap:2px}
-  header .hleft{width:100%;justify-content:flex-end}
+  header .hleft{width:100%;justify-content:flex-start}
   #controls{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   #controls .grp{flex:none}
   #controls #catBtn{flex:none}
@@ -153,12 +153,18 @@ body.dark #zoombar{background:rgba(17,24,39,.92);border-color:#4b5563}
 body.dark #zoombar button{background:#1f2937;color:#e5e7eb;border-color:#6b7280}
 body.dark #zoomlvl{color:#e5e7eb}
 .cidnum{color:#4b5563}
+#sug{position:absolute;top:100%;right:0;left:0;z-index:40;background:#fff;border:1px solid #ccc;border-radius:8px;margin-top:4px;max-height:220px;overflow:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);display:none}
+.sugrow{padding:6px 10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sugrow:hover{background:#f1f5f9}
+body.dark #sug{background:#1f2937;border-color:#4b5563}
+body.dark .sugrow:hover{background:#374151}
 </style>
 </head>
 <body>
 <header>
 <h1>מפת דרכים - קורסי מתמטיקה ומדעי המחשב</h1>
-<div class="hleft" style="display:flex;align-items:center;gap:8px"><span class="copyright">© 2026 עומר למל, כל הזכויות שמורות כמפורט <a href="https://github.com/OmerLemel/Courses-Roadmap/blob/main/LICENSE">בקישור הזה</a>.</span><button id="barTog" title="הצג/הסתר סרגל כלים"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></header>
+<button id="barTog" title="הצג/הסתר סרגל כלים"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+<div class="hleft" style="display:flex;align-items:center;gap:8px"><span class="copyright">© 2026 עומר למל, כל הזכויות שמורות כמפורט <a href="https://github.com/OmerLemel/Courses-Roadmap/blob/main/LICENSE">בקישור הזה</a>.</span></div></header>
 <div id="controls">
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px"><span id="yearBtns"></span><button class="iconbtn" id="openYedion" title="פתח ידיעון" style="width:22px;height:22px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></button></div></div><div class="chips" id="progs" style="margin-top:6px"></div>
   </div>
@@ -167,6 +173,7 @@ body.dark #zoomlvl{color:#e5e7eb}
     <span style="position:relative;display:block">
       <input id="search" placeholder="חיפוש קורס..." style="padding-left:26px">
       <button id="clearSearch" title="נקה חיפוש" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#6b7280;display:none">×</button>
+      <div id="sug"></div>
     </span>
     <div style="margin-top:6px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>דרישות קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>דרישות מקבילות</span></div>
   </div>
@@ -288,8 +295,23 @@ function buildControls(){
     s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
-  si.addEventListener('input',()=>{query=si.value.trim();syncClear();render();});
-  cs.onclick=()=>{si.value='';query='';syncClear();si.focus();render();};
+  const sugBox=()=>document.getElementById('sug');
+  const sugMatches=()=>{const q=si.value.trim();if(!q||!DATA)return[];
+    const t=q.replace('-','');
+    return DATA.courses.filter(c=>occOf(c)&&!offTypes.has(mainType(c))&&(c.name.includes(q)||c.id.replace('-','').includes(t))).slice(0,8);};
+  const hideSug=()=>{sugBox().style.display='none';};
+  const pickCourse=id=>{const c=byId[id];if(!c)return;
+    si.value='';query='';syncClear();hideSug();selected=id;showDetail(c);render();centerOn(id);};
+  const renderSug=()=>{const box=sugBox(),ms=sugMatches();
+    if(!ms.length){box.style.display='none';box.innerHTML='';return;}
+    box.innerHTML=ms.map(c=>`<div class="sugrow" data-id="${c.id}"><span>${c.name||mainType(c)}</span><span dir="ltr" style="color:#6b7280">${c.id}</span></div>`).join('');
+    box.style.display='block';
+    box.querySelectorAll('.sugrow').forEach(r=>r.addEventListener('mousedown',ev=>{ev.preventDefault();pickCourse(r.dataset.id);}));};
+  si.addEventListener('input',()=>{query=si.value.trim();syncClear();renderSug();render();});
+  si.addEventListener('keydown',e=>{if(e.key==='Enter'){const f=sugBox().querySelector('.sugrow');if(f)pickCourse(f.dataset.id);}
+    else if(e.key==='Escape'){hideSug();si.blur();}});
+  si.addEventListener('blur',()=>setTimeout(()=>hideSug(),120));
+  cs.onclick=()=>{si.value='';query='';syncClear();hideSug();si.focus();render();};
   const syncLeg=()=>{document.getElementById('legPre').classList.toggle('off',!showPreE);document.getElementById('legCo').classList.toggle('off',!showCoE);};
   const syncMode=()=>{document.getElementById('mCmp').classList.toggle('on',nodeMode==='compact');document.getElementById('mRoom').classList.toggle('on',nodeMode==='roomy');};
   const setMode=m=>{nodeMode=m;try{localStorage.setItem('tauNodeMode',m);}catch(_){}syncMode();render();};
@@ -335,6 +357,7 @@ function buildControls(){
   // pan (drag with mouse) + zoom (wheel / buttons), transform on #stage
   // (zoom/panX/panY/applyView/zoomAt live at top level so render() can clamp too)
   let drag=null,justDragged=false;
+  const ptrs=new Map();let pinch=null;
   wrap.addEventListener('wheel',e=>{e.preventDefault();
     const r=wrap.getBoundingClientRect();
     if(e.ctrlKey||e.metaKey){ // zoom anchored at cursor (instant, exact)
@@ -356,12 +379,31 @@ function buildControls(){
   wrap.addEventListener('pointerdown',e=>{
     if(e.target.closest('#zoombar'))return; // let toolbar buttons work normally
     document.getElementById('stage').style.transition='none';
-    drag={x:e.clientX,y:e.clientY,px:panX,py:panY,moved:false};});
-  window.addEventListener('pointermove',e=>{if(!drag)return;
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(ptrs.size===1){drag={x:e.clientX,y:e.clientY,px:panX,py:panY,moved:false};}
+    else{const p=[...ptrs.values()]; // second finger: start pinch
+      pinch={d:Math.max(20,Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y))};
+      if(drag)drag.moved=true;}});
+  window.addEventListener('pointermove',e=>{
+    if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch&&ptrs.size>=2){const p=[...ptrs.values()].slice(0,2);
+      const d1=Math.max(20,Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y));
+      const mx=(p[0].x+p[1].x)/2,my=(p[0].y+p[1].y)/2;
+      const r=wrap.getBoundingClientRect();
+      zoomAt(mx-r.left,my-r.top,d1/pinch.d);
+      pinch.d=d1;drag.moved=true;wrap.classList.add('dragging');return;}
+    if(!drag)return;
     const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
     if(Math.abs(dx)+Math.abs(dy)>4)drag.moved=true;
     if(drag.moved){panX=drag.px+dx;panY=drag.py+dy;applyView();wrap.classList.add('dragging');}});
-  const endDrag=()=>{if(drag&&drag.moved){justDragged=true;setTimeout(()=>justDragged=false,400);}drag=null;wrap.classList.remove('dragging');};
+  const endDrag=e=>{if(!e){ptrs.clear();pinch=null;drag=null;wrap.classList.remove('dragging');return;}
+    const had=ptrs.delete(e.pointerId);
+    if(ptrs.size<2)pinch=null;
+    if(!had)return; // untracked pointer (e.g. toolbar button): leave the gesture alone
+    if(ptrs.size===1){const p=[...ptrs.values()][0]; // one finger left: keep panning from here
+      drag={x:p.x,y:p.y,px:panX,py:panY,moved:drag&&drag.moved};}
+    else{if(drag&&drag.moved){justDragged=true;setTimeout(()=>justDragged=false,400);}drag=null;}
+    wrap.classList.remove('dragging');};
   window.addEventListener('pointerup',endDrag);
   window.addEventListener('pointercancel',endDrag);
   window.addEventListener('blur',endDrag);
