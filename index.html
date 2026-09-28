@@ -83,8 +83,8 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
   #zoombar button{width:36px;height:34px}
   #zoombar{top:auto;bottom:10px}
   header h1{font-size:14px;min-width:0}
+  header{flex-wrap:wrap;row-gap:2px}
 }
-@media (max-width:900px){.copyright{display:none}}
 @media (max-height:500px){
   #controls{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;align-items:center;-webkit-overflow-scrolling:touch}
   #controls .grp{flex:none}
@@ -244,6 +244,7 @@ let darkMode=false;
 try{darkMode=localStorage.getItem('tauDark')==='1';}catch(_){}
 let barHidden=false;
 try{barHidden=localStorage.getItem('tauBar')==='1';}catch(_){}
+let autoBar=false,prevSel=false;
 function applyDark(){document.body.classList.toggle('dark',darkMode);
   const b=document.getElementById('darkTog');if(b)b.checked=darkMode;}
 
@@ -441,6 +442,11 @@ function fitClamps(){ // shrink overflowing names to fit the 2-line box (cached 
 function render(){
   if(!DATA)return;
   document.body.classList.toggle('has-sel',!!selected);
+  const mMobile=window.matchMedia&&matchMedia('(max-width:768px)').matches;
+  if(mMobile&&selected&&!prevSel&&!barHidden){barHidden=true;autoBar=true;} // phone: sheet opens -> tuck toolbar away
+  if(!selected&&autoBar){barHidden=false;autoBar=false;} // restore only if we auto-hid
+  prevSel=!!selected;
+  document.getElementById('controls').classList.toggle('hidden',barHidden);
   const{NW,NH,GY,GX,PAD,TOPH,SUBH,BANDPAD,SEC,MAXL,nameFs}=DCFG[nodeMode]||DCFG.compact;
   document.body.classList.toggle('roomy',nodeMode==='roomy');
   let courses=DATA.courses.filter(c=>occOf(c));
