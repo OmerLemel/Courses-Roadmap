@@ -82,8 +82,13 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
   #yearBtns .btn{height:30px}
   #zoombar button{width:36px;height:34px}
   #zoombar{top:auto;bottom:10px}
-  header h1{font-size:15px}
-  .copyright{display:none}
+  header h1{font-size:14px;min-width:0}
+}
+@media (max-width:900px){.copyright{display:none}}
+@media (max-height:500px){
+  #controls{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;align-items:center;-webkit-overflow-scrolling:touch}
+  #controls .grp{flex:none}
+  #controls #catBtn{flex:none}
 }
 #side h2{font-size:15px;margin:0 0 6px}
 .kv{font-size:13px;margin:4px 0}
