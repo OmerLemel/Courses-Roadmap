@@ -157,7 +157,6 @@ body.dark #zoombar{background:rgba(17,24,39,.92);border-color:#4b5563}
 body.dark #zoombar button{background:#1f2937;color:#e5e7eb;border-color:#6b7280}
 body.dark #zoomlvl{color:#e5e7eb}
 .cidnum{color:#4b5563}
-.node .cidnum{color:rgba(255,255,255,.85);font-size:.85em}
 #sug{position:absolute;top:100%;right:0;left:0;z-index:40;background:#fff;border:1px solid #ccc;border-radius:8px;margin-top:4px;max-height:220px;overflow:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);display:none}
 .sugrow{padding:6px 10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .sugrow:hover{background:#f1f5f9}
@@ -644,9 +643,6 @@ function render(){
       const right=PAD+lane*(NW+GX); const yy=s.top+r*(NH+GY);
       pos[id]={cx:W-right-NW/2,left:W-right-NW,right:W-right,top:yy,bottom:yy+NH,lane};
       const t=mainType(c);
-      const dep=deptOf(c);
-      const badge=dep?`<span>${dep}</span>`:`<span dir="ltr">${c.id}</span>`;
-      const nmHtml=`<span class="clamp">${c.name||t} <span dir="ltr" class="cidnum">(${c.id})</span></span>`;
       let cls='node';
       if(selected===id)cls+=' sel';
       else if(selected&&hlPre.has(id))cls+=' hl-pre';
@@ -658,8 +654,8 @@ function render(){
       el.style.right=right+'px';el.style.top=yy+'px';el.style.background=COLORS[t];
       el.style.width=NW+'px';el.style.fontSize=nameFs+'px';
       el.innerHTML=nodeMode==='roomy'
-        ?`<div class="cid">${badge}</div><div class="nm">${nmHtml}</div><div class="meta" dir="rtl">${c.credits?c.credits+' ש״ס':''}</div>`
-        :`<div class="cid">${badge}<span dir="rtl">${c.credits?c.credits+' ש״ס':''}</span></div><div class="nm">${nmHtml}</div>`;
+        ?`<div class="cid"><span dir="ltr">${c.id}</span></div><div class="nm"><span class="clamp">${c.name||t}</span></div><div class="meta" dir="rtl">${c.credits?c.credits+' ש״ס':''}</div>`
+        :`<div class="cid"><span dir="ltr">${c.id}</span><span dir="rtl">${c.credits?c.credits+' ש״ס':''}</span></div><div class="nm"><span class="clamp">${c.name||t}</span></div>`;
       el.title=`${c.name||t} ${c.id} (${t})`;el.onclick=()=>{selected=c.id;showDetail(c);render();centerOn(c.id);};
       nodesEl.appendChild(el);
     });});});
@@ -738,8 +734,8 @@ function showDetail(c){
   const occ=o?`<div>${ramaShort}${(!/סמסטר/.test(ramaShort)&&o.sem)?' · סמסטר '+o.sem:''}</div>`:'';
   const next=DATA.edges.filter(e=>e.from===c.id);
   const dep=deptOf(c);
-  document.getElementById('detail').innerHTML=`<h2>${c.name||mainType(c)}</h2>
-    <div class="kv"><b style="direction:ltr">${c.id}</b> · ${c.credits} ש״ס · <span class="badge" style="background:${COLORS[mainType(c)]}">${mainType(c)}</span>${dep?` · <b>${dep}</b>`:''}</div>${occ}
+  document.getElementById('detail').innerHTML=`<h2>${c.name||mainType(c)} <span dir="ltr" class="cidnum">(${c.id})</span></h2>
+    <div class="kv">${dep?`<b>${dep}</b> · `:''}${c.credits} ש״ס · <span class="badge" style="background:${COLORS[mainType(c)]}">${mainType(c)}</span></div>${occ}
     <div class="kv"><div class="reqkey">דרישות קדם:</div>${renderLogic(c.reqPre)}</div>
     <div class="kv"><div class="reqkey">דרישות מקבילות:</div>${renderLogic(c.reqCo)}</div>
     <div class="kv"><b>קורסים שאפשר לקחת אחריו:</b><br>${next.length?next.map(e=>`${courseLink(e.to)} (${e.kind==='co'?'מקביל':'קדם'})`).join(' · '):'—'}</div>`;
