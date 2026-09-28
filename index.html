@@ -14,8 +14,8 @@
 html,body{height:100%;overflow:hidden}
 body{margin:0;font-family:Arial,Heebo,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
 header{background:#111827;color:#fff;padding:10px 16px;position:sticky;top:0;z-index:20;display:flex;justify-content:flex-start;align-items:center;gap:12px;flex:none;border-bottom:2px solid #6b7280}
-header h1{margin:0;font-size:18px}
-.copyright{font-size:11px;color:#9ca3af;white-space:nowrap;margin-right:auto}
+header h1{margin:0 0 0 auto;font-size:18px}
+.copyright{font-size:11px;color:#9ca3af;white-space:nowrap}
 .copyright a{color:#93c5fd;text-decoration:underline}
 header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
 #controls{background:var(--card);border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;position:sticky;top:0;z-index:19;flex:none}
@@ -85,7 +85,6 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
   header h1{font-size:14px;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   header{flex-wrap:wrap;row-gap:2px}
   header .copyright{width:100%;text-align:right}
-  header .hleft{width:100%;justify-content:flex-start}
   #controls{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   #controls .grp{flex:none}
   #controls #catBtn{flex:none}
@@ -164,8 +163,7 @@ body.dark .sugrow:hover{background:#374151}
 <body>
 <header>
 <h1>מפת דרכים - קורסי מתמטיקה ומדעי המחשב</h1>
-<button id="barTog" title="הצג/הסתר סרגל כלים"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-<div class="hleft" style="display:flex;align-items:center;gap:8px"><span class="copyright">© 2026 עומר למל, כל הזכויות שמורות כמפורט <a href="https://github.com/OmerLemel/Courses-Roadmap/blob/main/LICENSE">בקישור הזה</a>.</span></div></header>
+<span class="copyright">© 2026 עומר למל, כל הזכויות שמורות כמפורט <a href="https://github.com/OmerLemel/Courses-Roadmap/blob/main/LICENSE">בקישור הזה</a>.</span><button id="barTog" title="הצג/הסתר סרגל כלים"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></header>
 <div id="controls">
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px"><span id="yearBtns"></span><button class="iconbtn" id="openYedion" title="פתח ידיעון" style="width:22px;height:22px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></button></div></div><div class="chips" id="progs" style="margin-top:6px"></div>
   </div>
