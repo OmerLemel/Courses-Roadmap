@@ -13,9 +13,9 @@
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{margin:0;font-family:Arial,Heebo,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
-header{background:#111827;color:#fff;padding:10px 16px;position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:12px;flex:none;border-bottom:2px solid #6b7280}
+header{background:#111827;color:#fff;padding:10px 16px;position:sticky;top:0;z-index:20;display:flex;justify-content:flex-start;align-items:center;gap:12px;flex:none;border-bottom:2px solid #6b7280}
 header h1{margin:0;font-size:18px}
-.copyright{font-size:11px;color:#9ca3af;white-space:nowrap}
+.copyright{font-size:11px;color:#9ca3af;white-space:nowrap;margin-right:auto}
 .copyright a{color:#93c5fd;text-decoration:underline}
 header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
 #controls{background:var(--card);border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;position:sticky;top:0;z-index:19;flex:none}
@@ -84,6 +84,7 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
   #zoombar{top:auto;bottom:10px}
   header h1{font-size:14px;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   header{flex-wrap:wrap;row-gap:2px}
+  header .copyright{width:100%;text-align:right}
   header .hleft{width:100%;justify-content:flex-start}
   #controls{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   #controls .grp{flex:none}
