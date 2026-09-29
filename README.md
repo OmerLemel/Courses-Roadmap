@@ -3,7 +3,8 @@
 Live site: **https://omerlemel.github.io/Courses-Roadmap/**
 
 An interactive, top-down prerequisite roadmap for Tel Aviv University exact-sciences
-programs (mathematics, computer science). Pick a program and year, and explore which
+programs (math, statistics and data science, computer science, physics, chemistry,
+earth and planetary sciences). Pick a school, program and year, and explore which
 courses to take, in what order, and what depends on what.
 
 Built for students planning their degree — Hebrew UI, works on desktop and mobile
@@ -11,9 +12,9 @@ browsers. No build step, no backend: just static files.
 
 ## Features
 
-- **Programs & years** — 4 programs (dual Math+CS, CS+AI track, theoretical Math,
-  single-major CS), each with its available yedion years (2025 and/or 2026).
-  Data-driven: program buttons and year buttons are generated from the dataset.
+- **Programs & years** — 40 BSc programs across 6 schools, each with its
+  available yedion years (2025 and/or 2026). Two select boxes (school, then
+  program) replace the old buttons; everything is generated from the dataset.
 - **Dependency graph** — solid orange arrows = prerequisite (must take before),
   dashed blue arrows = co-requirement (can take in parallel). Faint by default;
   clicking a course highlights only its incoming arrows.
@@ -64,14 +65,19 @@ All course data comes from Tel Aviv University's public yedion API:
 - Prerequisite details: same endpoint with
   `results(apiUrl: "yddrishot", filters: {..., kursid, tcid})`
 
-| Program (ID) | tcid | Years in dataset |
-|---|---|---|
-| Dual Math + CS (דו-חוגי) | 7612 | 2025, 2026 |
-| CS + AI track | 8865 | 2026 only (program is new; TAU has no 2025 data) |
-| Theoretical Math (חד-חוגי) | 7606 | 2025, 2026 |
-| Single-major CS (חד-חוגי) | 7583 | 2025, 2026 |
+| School | TCIDs (each fetched for 2025 + 2026) |
+|---|---|
+| Math (12) | 7606, 7612, 7605, 8650, 8359, 8360, 7640, 8770, 7820, 7611, 7610, 7618 |
+| Statistics and Data Science (4) | 8614, 8390, 8620, 8617 |
+| Computer Science (4) | 7583, 8865, 8032, 8047 |
+| Physics (9) | 8366, 8376, 8367, 8365, 8358, 8368, 8371, 8369, 8370 |
+| Chemistry (6) | 7600, 7601, 7657, 6387, 7604, 7818 |
+| Earth and Planetary Sciences (5) | 7588, 7589, 8185, 7590, 7593 |
 
-`data.json` shape (generated, don't hand-edit): `programs[]` (id, name,
+All years fetched cleanly (no missing-year gaps this round; CS+AI 8865
+historically has no 2025 data and is 2026-only).
+
+`data.json` shape (generated, don't hand-edit): `programs[]` (id, school, name,
 per-year tcids + yedion URLs), `courses[]` (id like `0368-2160`, names,
 credits, per-program/year `{type, year, sem, rama}`, `reqPre`/`reqCo` logic
 groups), `edges[]` (`{from, to, kind: pre|co}`), `extNames` (names of
@@ -85,8 +91,8 @@ When TAU publishes a new year (or a curriculum changes):
    (use `--skip-prereqs` to skip the prerequisite pass). It writes
    `prog_<TCID>_<SHANA>.json` and tops up `prereqs.json` with unseen courses.
    New programs need one entry in `rebuild_data.py`'s `programs`/`filemap`
-   tables (id, Hebrew name, tcids, yedion URLs) — the site buttons pick it up
-   automatically.
+   tables (id, school, Hebrew name, tcids, yedion URLs) — the school/program
+   selects and year buttons pick it up automatically.
 2. **Rebuild**: `python rebuild_data.py` → regenerates `data.json`.
 3. **Sanity-check** the printed counts (courses/edges per program-year should
    look plausible; investigate `unknown course` override warnings).
