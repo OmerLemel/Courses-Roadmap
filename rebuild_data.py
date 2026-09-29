@@ -11,7 +11,7 @@ def ctype(rama_name):
     if 'מעבד' in n or 'פרויקט' in n: return 'חובה'  # labs / final projects are required
     if 'חובה' in n: return 'חובה'
     if 'בחירה' in n: return 'בחירה'
-    return 'בחירה'
+    return None
 
 def year_info(top, sub):
     y = 0; sem = ''
@@ -19,10 +19,15 @@ def year_info(top, sub):
     elif 'שנה ב' in top: y = 2
     elif 'שנה ג' in top: y = 3
     elif 'שנים ב' in top: y = 0
-    if 'שאר רוח' in top: y = 4
+    elif 'שנה ד' in top: y = 4
+    elif 'שנה ה' in top: y = 5
+    if 'שאר רוח' in top: y = 6
     if "סמסטר א" in sub: sem = 'א'
     elif "סמסטר ב" in sub: sem = 'ב'
     return y, sem
+
+PROG_DEFAULT = {'t7225': 'חובה', 't7844': 'חובה', 't7974': 'חובה'}
+              # unmarked sections in these programs are required
 
 programs = {
   "dual": {"id": "dual", "school": "math", "tcids": {'2025': ['7612'], '2026': ['7612']},
@@ -145,6 +150,18 @@ programs = {
   "t7593": {"id": "t7593", "school": "earth", "tcids": {"2025": ["7593"], "2026": ["7593"]},
            "name": "תוכנית דו-חוגית במדעי כדור הארץ ובמדעי המחשב",
            "url2025": "https://www.tau.ac.il/study-program?safa=1&shana=2025&tab=programStudy&tcid=7593", "url2026": "https://www.tau.ac.il/study-program?safa=1&shana=2026&tab=programStudy&tcid=7593"},
+  "t7225": {"id": "t7225", "school": "physics", "tcids": {"2025": ["7225"], "2026": ["7225"]},
+           "name": "תוכנית משולבת בהנדסת חשמל ובפיזיקה",
+           "url2025": "https://www.tau.ac.il/study-program?safa=1&shana=2025&tab=programStudy&tcid=7225", "url2026": "https://www.tau.ac.il/study-program?safa=1&shana=2026&tab=programStudy&tcid=7225"},
+  "t8996": {"id": "t8996", "school": "chem", "tcids": {"2026": ["8996"]},
+           "name": "תוכנית דו-חוגית בכימיה ובביולוגיה",
+           "url2026": "https://www.tau.ac.il/study-program?safa=1&shana=2026&tab=programStudy&tcid=8996"},
+  "t7844": {"id": "t7844", "school": "chem", "tcids": {"2025": ["7844"], "2026": ["7844"]},
+           "name": "תואר כפול  במדע והנדסה של חומרים ובכימיה",
+           "url2025": "https://www.tau.ac.il/study-program?safa=1&shana=2025&tab=programStudy&tcid=7844", "url2026": "https://www.tau.ac.il/study-program?safa=1&shana=2026&tab=programStudy&tcid=7844"},
+  "t7974": {"id": "t7974", "school": "earth", "tcids": {"2025": ["7974"], "2026": ["7974"]},
+           "name": "תואר כפול בהנדסה מכנית ובמדעי כדור הארץ עם הדגש בלימודי סביבה",
+           "url2025": "https://www.tau.ac.il/study-program?safa=1&shana=2025&tab=programStudy&tcid=7974", "url2026": "https://www.tau.ac.il/study-program?safa=1&shana=2026&tab=programStudy&tcid=7974"},
 }
 filemap = {
   "cs_2025": "prog_7583_2025.json", "cs_2026": "prog_7583_2026.json", "csai_2026": "prog_8865_2026.json",
@@ -173,7 +190,9 @@ filemap = {
   "t8614_2025": "prog_8614_2025.json", "t8614_2026": "prog_8614_2026.json", "t8617_2025": "prog_8617_2025.json",
   "t8617_2026": "prog_8617_2026.json", "t8620_2025": "prog_8620_2025.json", "t8620_2026": "prog_8620_2026.json",
   "t8650_2025": "prog_8650_2025.json", "t8650_2026": "prog_8650_2026.json", "t8770_2025": "prog_8770_2025.json",
-  "t8770_2026": "prog_8770_2026.json"
+  "t8770_2026": "prog_8770_2026.json", "t7225_2025": "prog_7225_2025.json", "t7225_2026": "prog_7225_2026.json",
+  "t8996_2026": "prog_8996_2026.json", "t7844_2025": "prog_7844_2025.json", "t7844_2026": "prog_7844_2026.json",
+  "t7974_2025": "prog_7974_2025.json", "t7974_2026": "prog_7974_2026.json"
 }
 prereq = json.load(open('prereqs.json', encoding='utf-8'))
 
@@ -198,6 +217,7 @@ for key, fn in filemap.items():
                                          "credits": k.get('shaotuni', ''), "programs": {}, "occ": {}}
                 c['programs'].setdefault(prog, {})
                 t = ctype(name)
+                if t is None: t = PROG_DEFAULT.get(prog, 'בחירה')
                 y, sem = year_info(top or name, name)
                 c['occ'][f'{prog}_{year}'] = {"type": t, "year": y, "sem": sem,
                                                    "rama": (top + ' / ' + name if top else name)}
@@ -224,7 +244,7 @@ for e in edges:
     if k not in seen: seen.add(k); ue.append(e)
 edges = ue
 for show, c in courses.items():
-    ys = [o['year'] for o in c['occ'].values() if o['year'] in (1, 2, 3)]
+    ys = [o['year'] for o in c['occ'].values() if o['year'] in (1, 2, 3, 4, 5)]
     c['year'] = min(ys) if ys else 4
 
 # --- manual semester overrides (teaching schedule beats yedion structure) ---

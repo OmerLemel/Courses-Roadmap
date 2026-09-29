@@ -257,7 +257,7 @@ function centerOn(id){ // glide the node into view, but only if it's off-screen
   if(sx>M&&sx<Ww-M&&syy>M&&syy<Wh-M)return;
   document.getElementById('stage').style.transition='transform .25s ease-out';
   panX=Ww/2-L0x-p.cx*zoom;panY=Wh/2-cy*zoom;applyView();}
-const BANDS=[{y:1,t:'שנה א׳'},{y:2,t:'שנה ב׳'},{y:3,t:'שנה ג׳ (כולל שנים ב׳+ג׳)'},{y:4,t:'שאר רוח / אחר'}];
+const BANDS=[{y:1,t:'שנה א׳'},{y:2,t:'שנה ב׳'},{y:3,t:'שנה ג׳ (כולל שנים ב׳+ג׳)'},{y:4,t:'שנה ד׳'},{y:5,t:'שנה ה׳'},{y:6,t:'שאר רוח / אחר'}];
 // per-mode layout config: compact squeezes chrome, roomy spends space visibly
 const DCFG={
   compact:{NW:178,NH:56,GY:22,GX:26,PAD:60,TOPH:38,SUBH:26,BANDPAD:16,SEC:10,MAXL:10,nameFs:12},
@@ -284,7 +284,7 @@ function occOf(c){ // occurrence for current year+program selection (single prog
 function mainType(c){const o=occOf(c);return o?o.type:'בחירה';}
 function deptOf(c){const p=(c.id||'').slice(0,4); // TAU unit code = department
   return p==='0366'||p==='0372'?'מתמטיקה':p==='0368'?'מדמ"ח':p==='0365'?'סטטיסטיקה וחקר ביצועים':p==='0321'?'פיזיקה':p==='0351'?'כימיה':p==='0341'?'מדעי כדור הארץ':'';}
-function mainYear(c){const o=occOf(c);if(!o)return 4;return o.year===0?3:o.year;}
+function mainYear(c){const o=occOf(c);if(!o)return 6;return o.year===0?3:o.year;}
 
 function buildControls(){
   const sSel=document.getElementById('schoolSel'),pSel=document.getElementById('progSel');
