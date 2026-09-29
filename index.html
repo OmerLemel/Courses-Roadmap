@@ -26,7 +26,8 @@ header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
 body.dark #schoolSel,body.dark #progSel{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
 #types .chip{white-space:nowrap}
 #typeGrp{flex:none;width:max-content;max-width:100%}
-#types{max-width:300px}
+#types{max-width:300px;flex-direction:column;align-items:stretch}
+.typerow{display:flex;gap:6px}
 .chip{border:2px solid #ccc;border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;background:#fff;user-select:none;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
 .chip.off{opacity:.45;border-style:dashed}
 .chip.off .dot{filter:grayscale(1)}
@@ -319,10 +320,11 @@ function buildControls(){
     const present=[...new Set(DATA.courses.map(c=>{const o=occOf(c);return o?o.type:null;}).filter(Boolean))];
     const sig=present.slice().sort().join('|');if(sig===lastTypeSig)return;lastTypeSig=sig;
     tc.innerHTML='';
-    Object.keys(COLORS).filter(t=>present.includes(t)).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
-      s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});
-    if(tc.childElementCount>3){const br=document.createElement('div');br.style.cssText='flex-basis:100%;height:0'; // max 3 per row
-      tc.insertBefore(br,tc.children[3]);}};
+    const rows=[document.createElement('div'),document.createElement('div')];
+    rows.forEach(r=>{r.className='typerow';tc.appendChild(r);});
+    Object.keys(COLORS).filter(t=>present.includes(t)).forEach((t,i)=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
+      s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};rows[i<3?0:1].appendChild(s);});
+    if(!rows[1].childElementCount)rows[1].remove();};
   syncTypes();
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
