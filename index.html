@@ -305,14 +305,20 @@ function buildControls(){
   const syncYears=()=>{const ys=yearsOf(selProg);if(!ys.includes(year))year=ys[ys.length-1];
     const yc=document.getElementById('yearBtns');yc.innerHTML='';
     yearsOf(selProg).forEach(y=>{const b=document.createElement('button');b.className='btn'+(y===year?' on':'');b.textContent=y;
-      b.onclick=()=>{year=y;selected=null;syncYears();saveFilters();render();};yc.appendChild(b);});};
+      b.onclick=()=>{year=y;selected=null;syncYears();syncTypes();saveFilters();render();};yc.appendChild(b);});};
   const selectProg=p=>{selProg=p;selected=null;
     const ys=yearsOf(p);if(!ys.includes(year))year=ys[ys.length-1]; // ascending: last is latest
-    syncP();syncYears();saveFilters();render();};
+    syncP();syncYears();syncTypes();saveFilters();render();};
   syncYears();
   const tc=document.getElementById('types');
-  Object.keys(COLORS).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
-    s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});
+  let lastTypeSig='@@';
+  const syncTypes=()=>{ // show only the course types present in the current program+year
+    const present=[...new Set(DATA.courses.map(c=>{const o=occOf(c);return o?o.type:null;}).filter(Boolean))];
+    const sig=present.slice().sort().join('|');if(sig===lastTypeSig)return;lastTypeSig=sig;
+    tc.innerHTML='';
+    Object.keys(COLORS).filter(t=>present.includes(t)).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
+      s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});};
+  syncTypes();
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
   const sugBox=()=>document.getElementById('sug');
@@ -344,7 +350,7 @@ function buildControls(){
     if(!occOf(c)){ // jump to a program+year containing it (keep current year when possible)
       const ks=Object.keys(c.occ||{});
       const k=ks.find(k=>k.endsWith('_'+year))||ks[0];
-      if(k){const i=k.lastIndexOf('_');selProg=k.slice(0,i);year=k.slice(i+1);selected=null;syncP();syncYears();saveFilters();}}
+      if(k){const i=k.lastIndexOf('_');selProg=k.slice(0,i);year=k.slice(i+1);selected=null;syncP();syncYears();syncTypes();saveFilters();}}
     const t=mainType(c);
     if(offTypes.has(t)){offTypes.delete(t);saveFilters(); // un-hide its type chip
       const chip=document.querySelector('#types .chip[data-t="'+t+'"]');if(chip)chip.classList.remove('off');}
