@@ -177,7 +177,7 @@ body.dark .sugrow:hover{background:#374151}
 </head>
 <body>
 <header>
-<h1>מפת דרכים - קורסי מתמטיקה ומדעי המחשב</h1>
+<h1>ידיעון מדוייקם - מפת דרכים</h1>
 <span class="copyright">© 2026 עומר למל, כל הזכויות שמורות כמפורט <a href="https://github.com/OmerLemel/Courses-Roadmap/blob/main/LICENSE">בקישור הזה</a>.</span><button id="barTog" title="הצג/הסתר סרגל כלים"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></header>
 <div id="controls">
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px"><span id="yearBtns"></span><button class="iconbtn" id="openYedion" title="פתח ידיעון" style="width:22px;height:22px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></button></div></div><div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;max-width:240px"><select id="schoolSel" title="בית ספר"></select><select id="progSel" title="תוכנית"></select></div>
@@ -263,10 +263,10 @@ const DCFG={
   compact:{NW:178,NH:56,GY:22,GX:26,PAD:60,TOPH:38,SUBH:26,BANDPAD:16,SEC:10,MAXL:10,nameFs:12},
   roomy:{NW:196,NH:86,GY:38,GX:30,PAD:60,TOPH:46,SUBH:28,BANDPAD:24,SEC:12,MAXL:8,nameFs:13}};
 const fitCache={};
-let nodeMode='compact';
-try{nodeMode=localStorage.getItem('tauNodeMode')||'roomy';}catch(_){}
-let darkMode=false;
-try{darkMode=localStorage.getItem('tauDark')==='1';}catch(_){}
+let nodeMode=(window.matchMedia&&matchMedia('(max-width:768px),(pointer:coarse)').matches)?'compact':'roomy';
+try{nodeMode=localStorage.getItem('tauNodeMode')||nodeMode;}catch(_){}
+let darkMode=true;
+try{if(localStorage.getItem('tauDark')==='0')darkMode=false;}catch(_){}
 let barHidden=false;
 try{barHidden=localStorage.getItem('tauBar')==='1';}catch(_){}
 let autoBar=false,prevSel=false;
