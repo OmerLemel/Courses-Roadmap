@@ -162,6 +162,8 @@ body.dark #zoomlvl{color:#e5e7eb}
 .sugtag{display:inline-block;font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:6px;padding:0 6px;margin-right:6px;vertical-align:middle}
 body.dark .sugcount{color:#9ca3af;border-color:#4b5563}
 body.dark .sugtag{color:#bfdbfe;background:#1e3a8a}
+.sugtag.typ{color:#fff}
+body.dark .sugtag.typ{color:#fff}
 .sugrow{padding:6px 10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .sugrow:hover{background:#f1f5f9}
 body.dark #sug{background:#1f2937;border-color:#4b5563}
@@ -307,11 +309,15 @@ function buildControls(){
   const sugBox=()=>document.getElementById('sug');
   const progShort=id=>({dual:'דו-חוגי',csai:'בינה מלאכותית',cs:'מדעי המחשב',math:'מתמטיקה'})[id]||id;
   const occProgs=c=>[...new Set(Object.keys(c.occ||{}).map(k=>k.slice(0,k.lastIndexOf('_'))))];
+  const trueType=c=>{const o=occOf(c);if(o)return o.type; // real type even outside current program
+    const ks=Object.keys(c.occ||{});const k=ks.find(k=>k.endsWith('_'+year))||ks[0];
+    return k?c.occ[k].type:'בחירה';};
   const sugMatches=()=>{const q=si.value.trim();if(!q||!DATA)return[];
     const t=q.replace('-','');
-    // search ALL courses (any program/type): current program first, prefix matches first
+    // search ALL courses (any program/type): שאר רוח last, then current program, prefix matches first
     const ms=DATA.courses.filter(c=>(c.name||'').includes(q)||c.id.replace('-','').includes(t));
     ms.sort((a,b)=>{
+      const sa=trueType(a)==='שאר רוח'?1:0,sb=trueType(b)==='שאר רוח'?1:0;if(sa!==sb)return sa-sb;
       const ia=occOf(a)?0:1,ib=occOf(b)?0:1;if(ia!==ib)return ia-ib;
       const pa=(a.name||'').startsWith(q)?0:1,pb=(b.name||'').startsWith(q)?0:1;if(pa!==pb)return pa-pb;
       return (a.name||'').localeCompare(b.name||'','he');});
@@ -334,10 +340,11 @@ function buildControls(){
     selected=id;showDetail(c);render();centerOn(id);};
   const renderSug=()=>{const box=sugBox(),{total,ms}=sugMatches();
     if(!ms.length){box.style.display='none';box.innerHTML='';return;}
+    const typ=c=>{const t=trueType(c);return `<span class="sugtag typ" style="background:${COLORS[t]||'#6b7280'}">${t}</span>`;};
     const tag=c=>{if(occOf(c))return'';
       const ps=occProgs(c).filter(p=>p!==selProg).map(progShort).join(' · ');return ps?`<span class="sugtag">${ps}</span>`:'';};
     box.innerHTML=`<div class="sugcount">${total>10?'10 תוצאות ראשונות מתוך '+total:total+' תוצאות'}</div>`
-      +ms.map(c=>`<div class="sugrow" data-id="${c.id}"><span>${c.name||mainType(c)}${tag(c)}</span><span dir="ltr" style="color:#6b7280">${c.id}</span></div>`).join('');
+      +ms.map(c=>`<div class="sugrow" data-id="${c.id}"><span>${c.name||mainType(c)}${typ(c)}${tag(c)}</span><span dir="ltr" style="color:#6b7280;white-space:nowrap">${c.id}</span></div>`).join('');
     box.style.display='block';positionSug();
     box.querySelectorAll('.sugrow').forEach(r=>r.addEventListener('mousedown',ev=>{ev.preventDefault();pickCourse(r.dataset.id);}));};
   window.addEventListener('resize',positionSug);
