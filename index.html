@@ -289,18 +289,20 @@ function mainYear(c){const o=occOf(c);if(!o)return 6;return o.year===0?3:o.year;
 function buildControls(){
   const sSel=document.getElementById('schoolSel'),pSel=document.getElementById('progSel');
   const SCHOOLS=[['math','מתמטיקה'],['stats','סטטיסטיקה ומדע הנתונים'],['cs','מדעי המחשב'],['physics','פיזיקה'],['chem','כימיה'],['earth','מדעי כדור הארץ']];
-  const schoolOf=id=>{const p=(DATA.programs||[]).find(p=>p.id===id);return p?p.school:SCHOOLS[0][0];};
+  const schoolOf=id=>{const p=(DATA.programs||[]).find(p=>p.id===id);if(!p)return SCHOOLS[0][0];
+    const lst=p.schools||[p.school];
+    return lst.includes(sSel.value)?sSel.value:lst[0];};
   SCHOOLS.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;sSel.appendChild(o);});
-  const progShortName=p=>p.name.replace(/^תוכנית |^תכנית /,'').trim().replace(/^(לימודים |חד-חוגית ב|חד חוגית ב|דו-חוגית ב|דו חוגית ב|משולבת ב|תואר כפול ב)/,'');
+  const progShortName=p=>{let s=(p.name||'').replace(/^תוכנית |^תכנית /,'').trim();const strips=['לימודים ','חד-חוגית ב','חד חוגית ב','דו-חוגית ב','דו חוגית ב','משולבת ב','תואר כפול ב','חד-חוגית ','חד חוגית ','דו-חוגית ','דו חוגית ','משולבת ','תואר כפול ','לתואר ראשון ב','לתואר ראשון מ'];let pv='@@';while(s!==pv){pv=s;for(const w of strips){if(s.startsWith(w)){s=s.slice(w.length).trim();break;}}}return s;};
   const syncP=()=>{const sch=schoolOf(selProg); // rebuild program options for the current school
     sSel.value=sch;pSel.innerHTML='';
-    DATA.programs.filter(p=>p.school===sch).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;o.title=p.name;pSel.appendChild(o);});
+    DATA.programs.filter(p=>(p.schools||[p.school]).includes(sch)).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;o.title=p.name;pSel.appendChild(o);});
     pSel.value=selProg;
     const pg=DATA.programs.find(p=>p.id===selProg);pSel.title=pg?pg.name:'';
     sSel.title=(SCHOOLS.find(s=>s[0]===sch)||[])[1]||'';};
   DATA.programs.forEach(p=>{PROGN[p.id]=p.name;});
   if(!PROGN[selProg])selProg='dual'; // saved program may predate current data
-  sSel.onchange=()=>{const inSch=DATA.programs.filter(p=>p.school===sSel.value);
+  sSel.onchange=()=>{const inSch=DATA.programs.filter(p=>(p.schools||[p.school]).includes(sSel.value));
     if(inSch.length)selectProg(inSch.some(p=>p.id===selProg)?selProg:inSch[0].id);};
   pSel.onchange=()=>selectProg(pSel.value);
   syncP();
@@ -329,9 +331,8 @@ function buildControls(){
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
   const sugBox=()=>document.getElementById('sug');
-  const progShort=id=>{const h={dual:'דו-חוגי',csai:'בינה מלאכותית',cs:'מדעי המחשב',math:'מתמטיקה'}[id];if(h)return h;
-    const p=(DATA.programs||[]).find(p=>p.id===id);if(!p)return id;
-    return progShortName(p)||p.name;};
+  const progShort=id=>{const p=(DATA.programs||[]).find(p=>p.id===id);
+    return p?progShortName(p):id;};
   const occProgs=c=>[...new Set(Object.keys(c.occ||{}).map(k=>k.slice(0,k.lastIndexOf('_'))))];
   const trueType=c=>{const o=occOf(c);if(o)return o.type; // real type even outside current program
     const ks=Object.keys(c.occ||{});const k=ks.find(k=>k.endsWith('_'+year))||ks[0];
