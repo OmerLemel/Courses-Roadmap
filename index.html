@@ -285,13 +285,12 @@ function mainYear(c){const o=occOf(c);if(!o)return 4;return o.year===0?3:o.year;
 function buildControls(){
   const sSel=document.getElementById('schoolSel'),pSel=document.getElementById('progSel');
   const SCHOOLS=[['math','מתמטיקה'],['stats','סטטיסטיקה ומדע הנתונים'],['cs','מדעי המחשב'],['physics','פיזיקה'],['chem','כימיה'],['earth','מדעי כדור הארץ']];
-  const SELSHORT={dual:'מדעי המחשב (דו-חוגי)',csai:'בינה מלאכותית',math:'עיונית (חד-חוגי)',cs:'חד-חוגי'};
   const schoolOf=id=>{const p=(DATA.programs||[]).find(p=>p.id===id);return p?p.school:SCHOOLS[0][0];};
   SCHOOLS.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;sSel.appendChild(o);});
   const progShortName=p=>p.name.replace(/^תוכנית |^תכנית /,'').trim().replace(/^(לימודים |חד-חוגית ב|חד חוגית ב|דו-חוגית ב|דו חוגית ב|משולבת ב|תואר כפול ב)/,'');
   const syncP=()=>{const sch=schoolOf(selProg); // rebuild program options for the current school
     sSel.value=sch;pSel.innerHTML='';
-    DATA.programs.filter(p=>p.school===sch).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=SELSHORT[p.id]||progShortName(p)||p.name;o.title=p.name;pSel.appendChild(o);});
+    DATA.programs.filter(p=>p.school===sch).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;o.title=p.name;pSel.appendChild(o);});
     pSel.value=selProg;
     const pg=DATA.programs.find(p=>p.id===selProg);pSel.title=pg?pg.name:'';
     sSel.title=(SCHOOLS.find(s=>s[0]===sch)||[])[1]||'';};
