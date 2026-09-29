@@ -157,7 +157,11 @@ body.dark #zoombar{background:rgba(17,24,39,.92);border-color:#4b5563}
 body.dark #zoombar button{background:#1f2937;color:#e5e7eb;border-color:#6b7280}
 body.dark #zoomlvl{color:#e5e7eb}
 .cidnum{color:#4b5563}
-#sug{position:absolute;top:100%;right:0;left:0;z-index:40;background:#fff;border:1px solid #ccc;border-radius:8px;margin-top:4px;max-height:220px;overflow:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);display:none}
+#sug{position:fixed;z-index:200;background:#fff;border:1px solid #ccc;border-radius:8px;max-height:260px;overflow:auto;box-shadow:0 4px 12px rgba(0,0,0,.25);display:none}
+.sugcount{padding:4px 10px;font-size:11px;color:#6b7280;border-bottom:1px solid #e5e7eb}
+.sugtag{display:inline-block;font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:6px;padding:0 6px;margin-right:6px;vertical-align:middle}
+body.dark .sugcount{color:#9ca3af;border-color:#4b5563}
+body.dark .sugtag{color:#bfdbfe;background:#1e3a8a}
 .sugrow{padding:6px 10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .sugrow:hover{background:#f1f5f9}
 body.dark #sug{background:#1f2937;border-color:#4b5563}
@@ -301,17 +305,43 @@ function buildControls(){
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
   const sugBox=()=>document.getElementById('sug');
+  const progShort=id=>({dual:'דו-חוגי',csai:'בינה מלאכותית',cs:'מדעי המחשב',math:'מתמטיקה'})[id]||id;
+  const occProgs=c=>[...new Set(Object.keys(c.occ||{}).map(k=>k.slice(0,k.lastIndexOf('_'))))];
   const sugMatches=()=>{const q=si.value.trim();if(!q||!DATA)return[];
     const t=q.replace('-','');
-    return DATA.courses.filter(c=>occOf(c)&&!offTypes.has(mainType(c))&&(c.name.includes(q)||c.id.replace('-','').includes(t))).slice(0,8);};
+    // search ALL courses (any program/type): current program first, prefix matches first
+    const ms=DATA.courses.filter(c=>(c.name||'').includes(q)||c.id.replace('-','').includes(t));
+    ms.sort((a,b)=>{
+      const ia=occOf(a)?0:1,ib=occOf(b)?0:1;if(ia!==ib)return ia-ib;
+      const pa=(a.name||'').startsWith(q)?0:1,pb=(b.name||'').startsWith(q)?0:1;if(pa!==pb)return pa-pb;
+      return (a.name||'').localeCompare(b.name||'','he');});
+    return {total:ms.length,ms:ms.slice(0,10)};};
   const hideSug=()=>{sugBox().style.display='none';};
+  const positionSug=()=>{const box=sugBox();if(box.style.display!=='block')return;
+    const r=si.getBoundingClientRect();
+    box.style.top=Math.min(window.innerHeight-8,r.bottom+4)+'px';
+    box.style.right=Math.max(8,window.innerWidth-r.right)+'px';
+    box.style.left=Math.max(8,r.left)+'px';};
   const pickCourse=id=>{const c=byId[id];if(!c)return;
-    si.value='';query='';syncClear();hideSug();selected=id;showDetail(c);render();centerOn(id);};
-  const renderSug=()=>{const box=sugBox(),ms=sugMatches();
+    si.value='';query='';syncClear();hideSug();
+    if(!occOf(c)){ // jump to a program+year containing it (keep current year when possible)
+      const ks=Object.keys(c.occ||{});
+      const k=ks.find(k=>k.endsWith('_'+year))||ks[0];
+      if(k){const i=k.lastIndexOf('_');selProg=k.slice(0,i);year=k.slice(i+1);selected=null;syncP();syncYears();saveFilters();}}
+    const t=mainType(c);
+    if(offTypes.has(t)){offTypes.delete(t);saveFilters(); // un-hide its type chip
+      const chip=document.querySelector('#types .chip[data-t="'+t+'"]');if(chip)chip.classList.remove('off');}
+    selected=id;showDetail(c);render();centerOn(id);};
+  const renderSug=()=>{const box=sugBox(),{total,ms}=sugMatches();
     if(!ms.length){box.style.display='none';box.innerHTML='';return;}
-    box.innerHTML=ms.map(c=>`<div class="sugrow" data-id="${c.id}"><span>${c.name||mainType(c)}</span><span dir="ltr" style="color:#6b7280">${c.id}</span></div>`).join('');
-    box.style.display='block';
+    const tag=c=>{if(occOf(c))return'';
+      const ps=occProgs(c).filter(p=>p!==selProg).map(progShort).join(' · ');return ps?`<span class="sugtag">${ps}</span>`:'';};
+    box.innerHTML=`<div class="sugcount">${total>10?'10 תוצאות ראשונות מתוך '+total:total+' תוצאות'}</div>`
+      +ms.map(c=>`<div class="sugrow" data-id="${c.id}"><span>${c.name||mainType(c)}${tag(c)}</span><span dir="ltr" style="color:#6b7280">${c.id}</span></div>`).join('');
+    box.style.display='block';positionSug();
     box.querySelectorAll('.sugrow').forEach(r=>r.addEventListener('mousedown',ev=>{ev.preventDefault();pickCourse(r.dataset.id);}));};
+  window.addEventListener('resize',positionSug);
+  document.getElementById('controls').addEventListener('scroll',positionSug,{passive:true});
   si.addEventListener('input',()=>{query=si.value.trim();syncClear();renderSug();render();});
   si.addEventListener('keydown',e=>{if(e.key==='Enter'){const f=sugBox().querySelector('.sugrow');if(f)pickCourse(f.dataset.id);}
     else if(e.key==='Escape'){hideSug();si.blur();}});
@@ -382,6 +412,7 @@ function buildControls(){
     document.getElementById('stage').style.transition='transform .12s ease-out';
     zoomAt(e.clientX-r.left,e.clientY-r.top,e.shiftKey?1/1.4:1.4);});
   wrap.addEventListener('pointerdown',e=>{
+    hideSug(); // a map gesture dismisses the suggestion box
     if(e.target.closest('#zoombar'))return; // let toolbar buttons work normally
     document.getElementById('stage').style.transition='none';
     ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
