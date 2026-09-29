@@ -113,7 +113,7 @@ svg#edges{position:absolute;top:0;right:0;overflow:visible;pointer-events:none}
 .reqline{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:4px 8px;margin:3px 0;line-height:1.6}
 .reqop{color:#6b7280;margin:0 6px;font-weight:bold}
 .reqor{text-align:center;color:#1e40af;font-weight:bold;margin:2px 0}
-.legend{display:flex;gap:14px;align-items:center;font-size:12px;flex-wrap:wrap}
+.legend{display:flex;gap:6px;align-items:center;font-size:12px;flex-wrap:wrap}
 .sw{width:44px;height:0;border-top:3px solid #333;display:inline-block;vertical-align:middle;margin-left:6px}
 .sw.dash{border-top-style:dashed}
 .catbtn{border-radius:10px;border:1px solid #999;background:#111827;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;align-self:center;width:104px;height:104px;flex:none}
@@ -193,7 +193,7 @@ body.dark .sugrow:hover{background:#374151}
       <button id="clearSearch" title="נקה חיפוש" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#6b7280;display:none">×</button>
       <div id="sug"></div>
     </span>
-    <div style="margin-top:4px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>מקביל</span><span id="legNext" class="legtog" title="לחצו להצגה/הסתרה"><span class="sw" style="border-color:#16a34a"></span>המשך</span></div>
+    <div style="margin-top:4px;justify-content:flex-start" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>מקביל</span><span id="legNext" class="legtog" title="לחצו להצגה/הסתרה"><span class="sw" style="border-color:#16a34a"></span>המשך</span></div>
   </div>
   <div class="grp" id="typeGrp"><h3>סוג קורס - לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">תצוגה</h3><label class="switch" title="מצב כהה"><input type="checkbox" id="darkTog"><span class="slider"></span></label></div><div style="margin-top:6px"><button class="progbtn" id="mRoom">מרווח</button> <button class="progbtn on" id="mCmp">דחוס</button></div><div id="stats"></div></div>
