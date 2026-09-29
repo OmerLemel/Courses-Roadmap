@@ -28,7 +28,9 @@ header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
 body.dark #schoolSel,body.dark #progSel{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
 #types .chip{white-space:nowrap;justify-self:start}
 .chip{border:2px solid #ccc;border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;background:#fff;user-select:none;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
-.chip.off{display:none}
+.chip.off{opacity:.45;border-style:dashed}
+.chip.off .dot{filter:grayscale(1)}
+body.dark .chip.off{opacity:.65}
 .chip .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px;vertical-align:middle}
 #search{font-size:14px;padding:6px 10px;border:1px solid #ccc;border-radius:8px;width:100%;height:30px;box-sizing:border-box}
 label.prog{display:flex;gap:6px;align-items:center;font-size:13px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:4px 8px;cursor:pointer}
@@ -187,7 +189,7 @@ body.dark .sugrow:hover{background:#374151}
     </span>
     <div style="margin-top:6px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>דרישות קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>דרישות מקבילות</span></div>
   </div>
-  <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">סוג קורס - לחצו להצגה/הסתרה</h3><button class="progbtn" id="showAllTypes" style="display:none">הצג הכל</button></div><div class="chips" id="types"></div></div>
+  <div class="grp"><h3>סוג קורס - לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">תצוגה</h3><label class="switch" title="מצב כהה"><input type="checkbox" id="darkTog"><span class="slider"></span></label></div><div style="margin-top:6px"><button class="progbtn" id="mRoom">מרווח</button> <button class="progbtn on" id="mCmp">דחוס</button></div><div id="stats"></div></div>
   <button id="catBtn" class="catbtn" title="חתול אקראי"><svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="15.5" rx="4.6" ry="3.8"/><circle cx="5.6" cy="10" r="2"/><circle cx="9.4" cy="6.6" r="2.1"/><circle cx="14.6" cy="6.6" r="2.1"/><circle cx="18.4" cy="10" r="2"/></svg></button>
 </div>
@@ -311,17 +313,14 @@ function buildControls(){
     const ys=yearsOf(p);if(!ys.includes(year))year=ys[ys.length-1]; // ascending: last is latest
     syncP();syncYears();syncTypes();saveFilters();render();};
   syncYears();
-  const tc=document.getElementById('types'),sa=document.getElementById('showAllTypes');
-  const syncShowAll=()=>{sa.style.display=offTypes.size?'':'none';};
+  const tc=document.getElementById('types');
   let lastTypeSig='@@';
   const syncTypes=()=>{ // show only the course types present in the current program+year
     const present=[...new Set(DATA.courses.map(c=>{const o=occOf(c);return o?o.type:null;}).filter(Boolean))];
-    const sig=present.slice().sort().join('|');
-    if(sig!==lastTypeSig){lastTypeSig=sig;tc.innerHTML='';
-      Object.keys(COLORS).filter(t=>present.includes(t)).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
-        s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');syncShowAll();saveFilters();render();};tc.appendChild(s);});}
-    syncShowAll();};
-  sa.onclick=()=>{offTypes.clear();syncTypes();saveFilters();render();};
+    const sig=present.slice().sort().join('|');if(sig===lastTypeSig)return;lastTypeSig=sig;
+    tc.innerHTML='';
+    Object.keys(COLORS).filter(t=>present.includes(t)).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
+      s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});};
   syncTypes();
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
@@ -356,7 +355,7 @@ function buildControls(){
       const k=ks.find(k=>k.endsWith('_'+year))||ks[0];
       if(k){const i=k.lastIndexOf('_');selProg=k.slice(0,i);year=k.slice(i+1);selected=null;syncP();syncYears();syncTypes();saveFilters();}}
     const t=mainType(c);
-    if(offTypes.has(t)){offTypes.delete(t);syncShowAll();saveFilters(); // un-hide its type chip
+    if(offTypes.has(t)){offTypes.delete(t);saveFilters(); // un-hide its type chip
       const chip=document.querySelector('#types .chip[data-t="'+t+'"]');if(chip)chip.classList.remove('off');}
     selected=id;showDetail(c);render();centerOn(id);};
   const renderSug=()=>{const box=sugBox(),{total,ms}=sugMatches();
