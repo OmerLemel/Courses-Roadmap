@@ -22,11 +22,11 @@ header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
 .grp{border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;background:#fafafa;display:flex;flex-direction:column;justify-content:flex-start}
 .grp h3{margin:0 0 6px;font-size:13px;height:26px;line-height:20px;display:flex;align-items:center;position:relative;top:-2px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-#types{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;justify-items:start;align-content:start}
-#types{display:grid;grid-template-columns:repeat(3,auto);gap:6px;justify-content:start}
 #schoolSel,#progSel{font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid #999;background:#fff;color:#111827;max-width:100%;width:100%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
 body.dark #schoolSel,body.dark #progSel{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
-#types .chip{white-space:nowrap;justify-self:start}
+#types .chip{white-space:nowrap;min-width:110px;justify-content:center}
+#typeGrp{flex:none;width:max-content;max-width:100%}
+#types{max-width:342px}
 .chip{border:2px solid #ccc;border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;background:#fff;user-select:none;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
 .chip.off{opacity:.45;border-style:dashed}
 .chip.off .dot{filter:grayscale(1)}
@@ -189,7 +189,7 @@ body.dark .sugrow:hover{background:#374151}
     </span>
     <div style="margin-top:6px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>דרישות קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>דרישות מקבילות</span></div>
   </div>
-  <div class="grp"><h3>סוג קורס - לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
+  <div class="grp" id="typeGrp"><h3>סוג קורס - לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">תצוגה</h3><label class="switch" title="מצב כהה"><input type="checkbox" id="darkTog"><span class="slider"></span></label></div><div style="margin-top:6px"><button class="progbtn" id="mRoom">מרווח</button> <button class="progbtn on" id="mCmp">דחוס</button></div><div id="stats"></div></div>
   <button id="catBtn" class="catbtn" title="חתול אקראי"><svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="15.5" rx="4.6" ry="3.8"/><circle cx="5.6" cy="10" r="2"/><circle cx="9.4" cy="6.6" r="2.1"/><circle cx="14.6" cy="6.6" r="2.1"/><circle cx="18.4" cy="10" r="2"/></svg></button>
 </div>
