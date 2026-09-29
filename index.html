@@ -26,6 +26,7 @@ header p{margin:2px 0 0;font-size:12px;color:#d1d5db}
 body.dark #schoolSel,body.dark #progSel{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
 #types .chip{white-space:nowrap}
 #typeGrp{flex:none;width:max-content;max-width:100%}
+#searchGrp{align-self:flex-start}
 #types{max-width:300px;flex-direction:column;align-items:stretch}
 .typerow{display:flex;gap:6px}
 .chip{border:2px solid #ccc;border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;background:#fff;user-select:none;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
@@ -185,7 +186,7 @@ body.dark .sugrow:hover{background:#374151}
 <div id="controls">
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;height:26px"><h3 style="margin:0">תכנית</h3><div style="font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px"><span id="yearBtns"></span><button class="iconbtn" id="openYedion" title="פתח ידיעון" style="width:22px;height:22px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></button></div></div><div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;max-width:240px"><select id="schoolSel" title="בית ספר"></select><select id="progSel" title="תוכנית"></select></div>
   </div>
-  <div class="grp"><h3>חיפוש (שם או מספר, למשל 2160 / 0368-2160)</h3>
+  <div class="grp" id="searchGrp"><h3>חיפוש (שם או מספר, למשל 2160 / 0368-2160)</h3>
     <span style="position:relative;display:block">
       <input id="search" placeholder="חיפוש קורס..." style="padding-left:26px">
       <button id="clearSearch" title="נקה חיפוש" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#6b7280;display:none">×</button>
