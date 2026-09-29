@@ -218,7 +218,7 @@ body.dark .sugrow:hover{background:#374151}
 <script>
 const COLORS={'חובה':'var(--c-hova)','ליבה':'var(--c-leva)','בחירה':'var(--c-bhira)','סמינר':'var(--c-seminar)','סדנה':'var(--c-sadna)','שאר רוח':'var(--c-ruach)'};
 const PROGN={};
-let DATA, selProg='dual', year='2026', offTypes=new Set(['שאר רוח','סדנה','סמינר']), query='', selected=null, showPreE=true, showCoE=true, showNextE=true;
+let DATA, selProg='dual', year='2026', offTypes=new Set(['שאר רוח','סדנה','סמינר']), query='', selected=null, showPreE=true, showCoE=true, showNextE=false;
 try{
   const s=JSON.parse(localStorage.getItem('tauFilters')||'{}');
   if(Array.isArray(s.off))offTypes=new Set(s.off);
