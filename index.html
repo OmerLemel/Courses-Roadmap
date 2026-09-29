@@ -320,7 +320,9 @@ function buildControls(){
     const sig=present.slice().sort().join('|');if(sig===lastTypeSig)return;lastTypeSig=sig;
     tc.innerHTML='';
     Object.keys(COLORS).filter(t=>present.includes(t)).forEach(t=>{const s=document.createElement('span');s.className='chip'+(offTypes.has(t)?' off':'');s.dataset.t=t;
-      s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});};
+      s.innerHTML=`<span class="dot" style="background:${COLORS[t]}"></span>${t}`;s.onclick=()=>{offTypes.has(t)?offTypes.delete(t):offTypes.add(t);s.classList.toggle('off');saveFilters();render();};tc.appendChild(s);});
+    if(tc.childElementCount>3){const br=document.createElement('div');br.style.cssText='flex-basis:100%;height:0'; // max 3 per row
+      tc.insertBefore(br,tc.children[3]);}};
   syncTypes();
   const si=document.getElementById('search'),cs=document.getElementById('clearSearch');
   const syncClear=()=>{cs.style.display=si.value?'block':'none';};
