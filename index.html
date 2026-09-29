@@ -62,6 +62,7 @@ body.roomy .node .cid{display:block;text-align:center}
 .node.sel{border-color:#000;outline:3px solid #facc15}
 .node.hl-pre{outline:4px solid #facc15;outline-offset:2px}
 .node.hl-co{outline:4px dashed #22d3ee;outline-offset:2px}
+.node.hl-next{outline:4px solid #16a34a;outline-offset:2px}
 .node.dim{opacity:.18}
 #detail a{color:#1d4ed8;text-decoration:none}
 #detail a b{text-decoration:underline}
@@ -134,7 +135,9 @@ body.dark .switch input:checked + .slider{background:#e5e7eb}
 body.dark .switch input:checked + .slider:before{background:#111827}
 .legtog .sw{width:26px}
 .legtog{cursor:pointer;user-select:none;border:2px solid #ccc;border-radius:20px;padding:3px 10px;background:#fff;font-size:12px;height:30px;display:inline-flex;align-items:center;box-sizing:border-box}
-.legtog.off{opacity:.4;text-decoration:line-through}
+.legtog.off{opacity:.45;border-style:dashed}
+.legtog.off .sw{filter:grayscale(1)}
+body.dark .legtog.off{opacity:.65}
 .btn{font-size:13px;padding:5px 12px;border-radius:8px;border:1px solid #999;background:#fff;cursor:pointer}
 .btn.on{background:#111827;color:#fff}
 #yearBtns .btn{height:22px;font-size:12px;padding:2px 10px;display:inline-flex;align-items:center}
@@ -188,7 +191,7 @@ body.dark .sugrow:hover{background:#374151}
       <button id="clearSearch" title="נקה חיפוש" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#6b7280;display:none">×</button>
       <div id="sug"></div>
     </span>
-    <div style="margin-top:6px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>דרישות קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>דרישות מקבילות</span></div>
+    <div style="margin-top:6px;justify-content:space-between" class="legend"><span id="legPre" class="legtog" title="לחצו להצגה/הסתרה של דרישות הקדם"><span class="sw" style="border-color:#d97706"></span>קדם</span><span id="legCo" class="legtog" title="לחצו להצגה/הסתרה של דרישות המקביל"><span class="sw dash" style="border-color:#0891b2"></span>מקביל</span><span id="legNext" class="legtog" title="לחצו להצגה/הסתרה"><span class="sw" style="border-color:#16a34a"></span>המשך</span></div>
   </div>
   <div class="grp" id="typeGrp"><h3>סוג קורס - לחצו להצגה/הסתרה</h3><div class="chips" id="types"></div></div>
   <div class="grp"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">תצוגה</h3><label class="switch" title="מצב כהה"><input type="checkbox" id="darkTog"><span class="slider"></span></label></div><div style="margin-top:6px"><button class="progbtn" id="mRoom">מרווח</button> <button class="progbtn on" id="mCmp">דחוס</button></div><div id="stats"></div></div>
@@ -215,18 +218,19 @@ body.dark .sugrow:hover{background:#374151}
 <script>
 const COLORS={'חובה':'var(--c-hova)','ליבה':'var(--c-leva)','בחירה':'var(--c-bhira)','סמינר':'var(--c-seminar)','סדנה':'var(--c-sadna)','שאר רוח':'var(--c-ruach)'};
 const PROGN={};
-let DATA, selProg='dual', year='2026', offTypes=new Set(['שאר רוח','סדנה','סמינר']), query='', selected=null, showPreE=true, showCoE=true;
+let DATA, selProg='dual', year='2026', offTypes=new Set(['שאר רוח','סדנה','סמינר']), query='', selected=null, showPreE=true, showCoE=true, showNextE=true;
 try{
   const s=JSON.parse(localStorage.getItem('tauFilters')||'{}');
   if(Array.isArray(s.off))offTypes=new Set(s.off);
   if(typeof s.pre==='boolean')showPreE=s.pre;
   if(typeof s.co==='boolean')showCoE=s.co;
+  if(typeof s.nxt==='boolean')showNextE=s.nxt;
   if(typeof s.prog==='string')selProg=s.prog;
   if(typeof s.year==='string')year=s.year;
 }catch(_){}
-function saveFilters(){try{localStorage.setItem('tauFilters',JSON.stringify({off:[...offTypes],pre:showPreE,co:showCoE,prog:selProg,year}));}catch(_){}}
+function saveFilters(){try{localStorage.setItem('tauFilters',JSON.stringify({off:[...offTypes],pre:showPreE,co:showCoE,nxt:showNextE,prog:selProg,year}));}catch(_){}}
 let byId={};
-let hlPre=new Set(), hlCo=new Set();
+let hlPre=new Set(), hlCo=new Set(), hlNext=new Set();
 let zoom=1,panX=0,panY=0,lastW=0,lastH=0,lastPos={};
 const PAN_MARGIN=150;
 function clampPan(){ // keep at least PAN_MARGIN px of the graph visible (stage is right-aligned in RTL, top-aligned)
@@ -382,7 +386,7 @@ function buildControls(){
     else if(e.key==='Escape'){hideSug();si.blur();}});
   si.addEventListener('blur',()=>setTimeout(()=>hideSug(),120));
   cs.onclick=()=>{si.value='';query='';syncClear();hideSug();si.focus();render();};
-  const syncLeg=()=>{document.getElementById('legPre').classList.toggle('off',!showPreE);document.getElementById('legCo').classList.toggle('off',!showCoE);};
+  const syncLeg=()=>{document.getElementById('legPre').classList.toggle('off',!showPreE);document.getElementById('legCo').classList.toggle('off',!showCoE);document.getElementById('legNext').classList.toggle('off',!showNextE);};
   const syncMode=()=>{document.getElementById('mCmp').classList.toggle('on',nodeMode==='compact');document.getElementById('mRoom').classList.toggle('on',nodeMode==='roomy');};
   const setMode=m=>{nodeMode=m;try{localStorage.setItem('tauNodeMode',m);}catch(_){}syncMode();render();};
   document.getElementById('mCmp').onclick=()=>setMode('compact');
@@ -412,6 +416,7 @@ function buildControls(){
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>syncCatSize());
   document.getElementById('legPre').onclick=()=>{showPreE=!showPreE;syncLeg();saveFilters();render();};
   document.getElementById('legCo').onclick=()=>{showCoE=!showCoE;syncLeg();saveFilters();render();};
+  document.getElementById('legNext').onclick=()=>{showNextE=!showNextE;syncLeg();saveFilters();render();};
   // edge hover: temporarily thicken + fully reveal the hovered arrow (no re-render)
   const svgEl=document.getElementById('edges');
   svgEl.onmouseover=e=>{const p=e.target.closest&&e.target.closest('path[data-e]');if(!p||!p.dataset.w)return;
@@ -572,8 +577,9 @@ function render(){
   const layoutEdges=DATA.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
   const edges=layoutEdges.filter(e=>e.kind==='co'?showCoE:showPreE); // only affects drawing, never layout
   // highlight: direct prerequisites (solid) and parallel (dashed) of selected course
-  hlPre=new Set();hlCo=new Set();
-  if(selected){layoutEdges.filter(e=>e.to===selected).forEach(e=>{(e.kind==='co'?hlCo:hlPre).add(e.from);});}
+  hlPre=new Set();hlCo=new Set();hlNext=new Set();
+  if(selected){layoutEdges.filter(e=>e.to===selected).forEach(e=>{(e.kind==='co'?hlCo:hlPre).add(e.from);});
+    if(showNextE)layoutEdges.filter(e=>e.from===selected).forEach(e=>{hlNext.add(e.to);});}
   document.getElementById('stats').innerHTML=`<div class="statrow"><div class="statbox"><b>${courses.length}</b><span>קורסים</span></div><div class="statbox"><b>${edges.length}</b><span>חצים</span></div></div>`;
   syncYedion();
   const hasY2=()=>DATA.courses.some(c=>{const o=(c.programs[selProg]||{})[year];return o&&o.year===2;});
@@ -713,8 +719,9 @@ function render(){
       if(selected===id)cls+=' sel';
       else if(selected&&hlPre.has(id))cls+=' hl-pre';
       else if(selected&&hlCo.has(id))cls+=' hl-co';
+      else if(selected&&hlNext.has(id))cls+=' hl-next';
       if(query&&!matchQ(c))cls+=' dim';
-      else if(selected&&selected!==id&&!hlPre.has(id)&&!hlCo.has(id))cls+=' dim';
+      else if(selected&&selected!==id&&!hlPre.has(id)&&!hlCo.has(id)&&!hlNext.has(id))cls+=' dim';
       const el=document.createElement('div');el.className=cls;
       el.dataset.cid=c.id;
       el.style.right=right+'px';el.style.top=yy+'px';el.style.background=COLORS[t];
@@ -733,7 +740,8 @@ function render(){
   const markers=`<defs>
     <marker id="ah" markerWidth="11" markerHeight="11" refX="0" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="${darkMode?'#9ca3af':'#6b7280'}"/></marker>
     <marker id="ahP" markerWidth="11" markerHeight="11" refX="0" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="#d97706"/></marker>
-    <marker id="ahC" markerWidth="11" markerHeight="11" refX="0" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="#0891b2"/></marker></defs>`;
+    <marker id="ahC" markerWidth="11" markerHeight="11" refX="0" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="#0891b2"/></marker>
+    <marker id="ahN" markerWidth="11" markerHeight="11" refX="0" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 z" fill="#16a34a"/></marker></defs>`;
   const inE={},outE={};
   edges.forEach(e=>{(inE[e.to]=inE[e.to]||[]).push(e);(outE[e.from]=outE[e.from]||[]).push(e);});
   Object.values(inE).forEach(l=>l.sort((a,b)=>a.from<b.from?-1:1));
@@ -747,6 +755,7 @@ function render(){
       if(selected){
         if(e.to===selected&&e.kind==='pre'){stroke='#d97706';w=3;o=1;mk='ahP';}
         else if(e.to===selected&&e.kind==='co'){stroke='#0891b2';w=3;o=1;mk='ahC';}
+        else if(e.from===selected&&showNextE){stroke='#16a34a';w=3;o=1;mk='ahN';}
         else hide='visibility="hidden"';
       }
       const dash=e.kind==='co'?'stroke-dasharray="7 5"':'';
@@ -804,7 +813,7 @@ function showDetail(c){
     <div class="kv">${dep?`<b>${dep}</b> · `:''}${c.credits} ש״ס · <span class="badge" style="background:${COLORS[mainType(c)]}">${mainType(c)}</span></div>${occ}
     <div class="kv"><div class="reqkey">דרישות קדם:</div>${renderLogic(c.reqPre)}</div>
     <div class="kv"><div class="reqkey">דרישות מקבילות:</div>${renderLogic(c.reqCo)}</div>
-    <div class="kv"><b>קורסים שאפשר לקחת אחריו:</b><br>${next.length?next.map(e=>`${courseLink(e.to)} (${e.kind==='co'?'מקביל':'קדם'})`).join(' · '):'—'}</div>`;
+    <div class="kv"><b>פותח את:</b><br>${next.length?next.map(e=>`${courseLink(e.to)} (${e.kind==='co'?'מקביל':'קדם'})`).join(' · '):'—'}</div>`;
   document.querySelectorAll('#detail a[data-go]').forEach(a=>a.onclick=ev=>{ev.preventDefault();const t=DATA.courses.find(x=>x.id===a.dataset.go);if(t){selected=t.id;showDetail(t);render();centerOn(t.id);}});
 }
 function syncCatSize(){try{
