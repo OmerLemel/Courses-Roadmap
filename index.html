@@ -366,7 +366,10 @@ function buildControls(){
     if(!ms.length){box.style.display='none';box.innerHTML='';return;}
     const typ=c=>{const t=trueType(c);return `<span class="sugtag typ" style="background:${COLORS[t]||'#6b7280'}">${t}</span>`;};
     const tag=c=>{if(occOf(c))return'';
-      const ps=occProgs(c).filter(p=>p!==selProg).map(progShort).join(' · ');return ps?`<span class="sugtag">${ps}</span>`:'';};
+      const ps=occProgs(c).filter(p=>p!==selProg);if(!ps.length)return'';
+      const shown=ps.slice(0,2).map(progShort),extra=ps.length-shown.length;
+      const full=ps.map(progShort).join(' · ');
+      return `<span class="sugtag" title="${full}">${shown.join(' · ')}${extra?' +'+extra:''}</span>`;};
     box.innerHTML=`<div class="sugcount">${total>10?'10 תוצאות ראשונות מתוך '+total:total+' תוצאות'}</div>`
       +ms.map(c=>`<div class="sugrow" data-id="${c.id}"><span>${c.name||mainType(c)}${typ(c)}${tag(c)}</span><span dir="ltr" style="color:#6b7280;white-space:nowrap">${c.id}</span></div>`).join('');
     box.style.display='block';positionSug();
